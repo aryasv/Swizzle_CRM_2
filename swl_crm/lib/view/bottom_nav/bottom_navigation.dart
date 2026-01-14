@@ -82,7 +82,7 @@ class BottomNavigation extends StatelessWidget {
             ),
             _buildItem(
               index: 1,
-              label: 'Deals',
+              label: 'deals',
               icon: 'assets/images/nav_deals_active.png',
             ),
             _buildItem(

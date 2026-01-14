@@ -37,12 +37,14 @@ export 'package:swl_crm/view/custom_classes/dimensions.dart';
 
 
 //Folder > Custom Class > App Bar
+export 'package:swl_crm/view/custom_classes/custom_app_bar.dart';
 
 
 //Folder > Custom Class > Custom Header
 
 
-//Login Classes
+//Folder > deals
 
+export 'package:swl_crm/view/deals/deals_list.dart';
 
 
