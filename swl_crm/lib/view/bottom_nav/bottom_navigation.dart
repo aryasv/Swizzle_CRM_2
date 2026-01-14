@@ -1,41 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class BottomNavigation extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
   const BottomNavigation({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   Widget _buildItem({
     required int index,
     required String label,
-    required String activeIcon,
-    required String inactiveIcon,
+    required String icon,
   }) {
     final bool isActive = currentIndex == index;
+    final Color activeColor = Colors.blue;
+    final Color inactiveColor = Colors.grey;
 
     return InkWell(
       onTap: () => onTap(index),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 6,
+          bottom: 6
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              isActive ? activeIcon : inactiveIcon,
+              icon,
               width: 24,
               height: 24,
+              color: isActive ? activeColor : inactiveColor,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isActive ? Colors.blue : Colors.grey,
+                color: isActive ? activeColor : inactiveColor,
                 fontWeight:
                 isActive ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -70,26 +78,22 @@ class BottomNavigation extends StatelessWidget {
             _buildItem(
               index: 0,
               label: 'Home',
-              activeIcon: 'assets/images/nav_home_active.png',
-              inactiveIcon: 'assets/images/dummy_icon.png',
+              icon: 'assets/images/nav_home_active.png',
             ),
             _buildItem(
               index: 1,
               label: 'Deals',
-              activeIcon: 'assets/images/nav_deals_active.png',
-              inactiveIcon: 'assets/images/dummy_icon.png',
+              icon: 'assets/images/nav_deals_active.png',
             ),
             _buildItem(
               index: 2,
               label: 'Tasks',
-              activeIcon: 'assets/images/nav_tasks_active.png',
-              inactiveIcon: 'assets/images/dummy_icon.png',
+              icon: 'assets/images/nav_tasks_active.png',
             ),
             _buildItem(
               index: 3,
               label: 'Settings',
-              activeIcon: 'assets/images/nav_settings_active.png',
-              inactiveIcon: 'assets/images/dummy_icon.png',
+              icon: 'assets/images/nav_settings_active.png',
             ),
           ],
         ),

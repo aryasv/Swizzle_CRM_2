@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:swl_crm/view/custom_classes/imports.dart';
-
-
 import 'custom_dimensions_app.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class Dimensions {
   //HOW TO USE - Eg:

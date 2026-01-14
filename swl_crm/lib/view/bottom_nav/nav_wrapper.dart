@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'bottom_navigation.dart';
-import 'nav_home.dart';
-import 'nav_deals.dart';
-import 'nav_tasks.dart';
-import 'nav_settings.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
+
 
 class NavWrapper extends StatefulWidget {
-  const NavWrapper({Key? key}) : super(key: key);
+  const NavWrapper({super.key});
 
   @override
   State<NavWrapper> createState() => _NavWrapperState();

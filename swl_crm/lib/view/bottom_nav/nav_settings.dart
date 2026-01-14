@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class NavSettings extends StatelessWidget {
   const NavSettings({Key? key}) : super(key: key);

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class ForgotPasswordPage extends StatelessWidget {
+  const ForgotPasswordPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +13,9 @@ class LoginPage extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: 24),
+
                 // Logo
                 RichText(
                   text: const TextSpan(
@@ -43,14 +44,26 @@ class LoginPage extends StatelessWidget {
                   'MANAGE SMART. WORK FAST.',
                   style: TextStyle(
                     fontSize: 11,
-                    letterSpacing: 1.1,
+                    letterSpacing: 1.2,
                     color: Colors.grey,
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-                // Login Card
+                // Page title
+                const Text(
+                  'Forgot Password?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Card
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -68,10 +81,10 @@ class LoginPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
+                      // Card title
                       const Center(
                         child: Text(
-                          'Sign In',
+                          'Reset Password',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -79,9 +92,22 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
 
+                      const SizedBox(height: 4),
+
+                      const Center(
+                        child: Text(
+                          "Enter your email address and we'll send you\na password reset link",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+
                       const SizedBox(height: 24),
 
-                      // Email
+                      // Email label
                       const Text(
                         'Email Address',
                         style: TextStyle(
@@ -90,75 +116,24 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
+
+                      // Email field
                       TextField(
                         keyboardType: TextInputType.emailAddress,
                         decoration: _inputDecoration(
-                          hintText: 'Email',
+                          hintText: 'Enter your email',
                         ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Password
-                      const Text(
-                        'Password',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        obscureText: true,
-                        decoration: _inputDecoration(
-                          hintText: '••••••••',
-                          suffixIcon: const Icon(
-                            Icons.visibility_outlined,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // Forgot password
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ForgotPasswordPage(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.blue.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Sign In Button
+                      // Send button
                       SizedBox(
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const NavWrapper(),
-                              ),
-                            );
+                            // Static for now
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2A7DE1),
@@ -168,7 +143,7 @@ class LoginPage extends StatelessWidget {
                             ),
                           ),
                           child: const Text(
-                            'Sign In',
+                            'Send Reset Link',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -178,6 +153,24 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
 
+                      const SizedBox(height: 16),
+
+                      // Back to login
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'Back to Login',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.blue.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -189,16 +182,13 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  //InputDecoration blue focus
   static InputDecoration _inputDecoration({
     required String hintText,
-    Widget? suffixIcon,
   }) {
     return InputDecoration(
       hintText: hintText,
       filled: true,
       fillColor: const Color(0xFFF9F9F9),
-      suffixIcon: suffixIcon,
       contentPadding:
       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       border: OutlineInputBorder(
@@ -212,11 +202,10 @@ class LoginPage extends StatelessWidget {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(
-          color: Color(0xFF2A7DE1), // Blue focus
+          color: Color(0xFF2A7DE1),
           width: 1.5,
         ),
       ),
     );
   }
 }
-

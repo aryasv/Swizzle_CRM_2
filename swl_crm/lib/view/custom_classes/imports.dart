@@ -2,19 +2,24 @@
 //import 'package:swl_crm/view/custom_classes/imports.dart';
 
 //Splash
-
+export 'package:swl_crm/view/forgot_password_page.dart';
+export 'package:swl_crm/view/login.dart';
+export 'package:swl_crm/view/splash_screen.dart';
 
 
 //Folder > Bottom Nav Classes
-
+export 'package:swl_crm/view/bottom_nav/bottom_navigation.dart';
+export 'package:swl_crm/view/bottom_nav/nav_deals.dart';
+export 'package:swl_crm/view/bottom_nav/nav_home.dart';
+export 'package:swl_crm/view/bottom_nav/nav_settings.dart';
+export 'package:swl_crm/view/bottom_nav/nav_tasks.dart';
+export 'package:swl_crm/view/bottom_nav/nav_wrapper.dart';
 
 
 
 //Folder > Custom Class > Dimensions
-import 'package:swl_crm/view/custom_classes/custom_dimensions_app.dart';
-import 'package:swl_crm/view/custom_classes/dimensions.dart';
-
-
+export 'package:swl_crm/view/custom_classes/custom_dimensions_app.dart';
+export 'package:swl_crm/view/custom_classes/dimensions.dart';
 
 
 //Folder > Custom Class > Colors
@@ -28,17 +33,14 @@ import 'package:swl_crm/view/custom_classes/dimensions.dart';
 
 //Folder > Custom Class > Buttons
 
-
 //Folder > Custom Class > Bottom Popup
-
-
-//Folder > Custom Class > Text counter
 
 
 //Folder > Custom Class > App Bar
 
 
 //Folder > Custom Class > Custom Header
+
 
 //Login Classes
 
