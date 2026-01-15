@@ -44,7 +44,9 @@ export 'package:swl_crm/view/custom_classes/custom_app_bar.dart';
 
 
 //Folder > deals
-
 export 'package:swl_crm/view/deals/deals_list.dart';
+
+//Folder > tasks
+export 'package:swl_crm/view/tasks/tasks_list.dart';
 
 
