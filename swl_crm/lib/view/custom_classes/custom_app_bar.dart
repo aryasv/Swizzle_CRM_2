@@ -29,7 +29,7 @@ class CustomAppBar extends StatelessWidget {
       bottom: false,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: Colors.transparent,
+        color: Colors.white,
         child: Row(
           children: [
             // Back button
