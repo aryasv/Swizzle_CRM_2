@@ -46,6 +46,10 @@ export 'package:swl_crm/view/custom_classes/custom_app_bar.dart';
 //Folder > deals
 export 'package:swl_crm/view/deals/deals_list.dart';
 
+//Folder > products
+export 'package:swl_crm/view/products/products_page.dart';
+export 'package:swl_crm/view/products/products_list.dart';
+
 //Folder > settings
 export 'package:swl_crm/view/settings/settings_list.dart';
 

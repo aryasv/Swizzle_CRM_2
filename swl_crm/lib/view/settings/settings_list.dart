@@ -53,7 +53,7 @@ class SettingsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Normal settings
+
         ..._items.map(
               (item) => _SettingsTile(item: item),
         ),
@@ -70,7 +70,7 @@ class SettingsList extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final _SettingItem item;
 
-  const _SettingsTile({Key? key, required this.item}) : super(key: key);
+  const _SettingsTile({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +137,7 @@ class _SettingsTile extends StatelessWidget {
 }
 
 class _DeleteAccountTile extends StatelessWidget {
-  const _DeleteAccountTile({Key? key}) : super(key: key);
+  const _DeleteAccountTile({super.key});
 
   @override
   Widget build(BuildContext context) {
