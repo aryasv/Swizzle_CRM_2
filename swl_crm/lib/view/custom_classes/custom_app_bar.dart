@@ -13,7 +13,7 @@ class CustomAppBar extends StatelessWidget {
   final VoidCallback? onRightAction2;
 
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.title,
     this.showBack = false,
     this.onBack,
@@ -21,7 +21,7 @@ class CustomAppBar extends StatelessWidget {
     this.onRightAction1,
     this.rightAction2,
     this.onRightAction2,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class CustomAppBar extends StatelessWidget {
       bottom: false,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: Colors.white,
+        color: Colors.transparent,
         child: Row(
           children: [
             // Back button

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/splash_screen.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
 
 
 void main() {
@@ -17,7 +18,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: const SplashScreen(),
+      // home: const SplashScreen(),
+       home: const NavWrapper(),
+      //home: const ProductsPage(),
+      // home: const ContactsPage(),
+      //home: const ProfilePage(),
+      //home: const CompaniesPage(),
     );
   }
 }

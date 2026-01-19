@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
-class ProductsPage extends StatefulWidget {
-  const ProductsPage({super.key});
+class CompaniesPage extends StatefulWidget {
+  const CompaniesPage({super.key});
 
   @override
-  State<ProductsPage> createState() => _ProductsPageState();
+  State<CompaniesPage> createState() => _CompaniesPageState();
 }
 
-class _ProductsPageState extends State<ProductsPage>
+class _CompaniesPageState extends State<CompaniesPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -16,6 +16,7 @@ class _ProductsPageState extends State<ProductsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
   }
 
   @override
@@ -30,9 +31,9 @@ class _ProductsPageState extends State<ProductsPage>
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          // Custom AppBar with back
-          CustomAppBar(
-            title: 'Products',
+          // AppBar
+          const CustomAppBar(
+            title: 'Companies',
             showBack: true,
           ),
 
@@ -40,26 +41,25 @@ class _ProductsPageState extends State<ProductsPage>
           CustomTabBar(
             controller: _tabController,
             tabs: const [
-              CustomTabItem(label: 'Active', count: 2),
-              CustomTabItem(label: 'Inactive', count: 1),
+              CustomTabItem(label: 'Active', count: 15),
+              CustomTabItem(label: 'Inactive', count: 5),
             ],
           ),
-
 
           // List
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: const [
-                ProductsList(isActive: true),
-                ProductsList(isActive: false),
+                CompaniesList(),
+                CompaniesList(),
               ],
             ),
           ),
         ],
       ),
 
-      // Floating button
+      // Add company
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
         onPressed: () {},

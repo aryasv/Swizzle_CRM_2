@@ -10,42 +10,70 @@ class SettingsList extends StatelessWidget {
       icon: Icons.person_outline,
       title: 'My Profile',
       subtitle: 'View and edit your profile',
-      onTap: () {
-        debugPrint('My Profile tapped');
+      onTap: (context) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProfilePage(),
+          ),
+        );
       },
     ),
+
+
     _SettingItem(
       icon: Icons.inventory_2_outlined,
       title: 'Products',
       subtitle: 'Manage your products',
-      onTap: () {
-        debugPrint('Products tapped');
+      onTap: (context) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProductsPage(),
+          ),
+        );
       },
     ),
     _SettingItem(
       icon: Icons.apartment_outlined,
       title: 'Companies',
       subtitle: 'View and manage companies',
-      onTap: () {
-        debugPrint('Companies tapped');
+      onTap: (context) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CompaniesPage(),
+          ),
+        );
       },
     ),
     _SettingItem(
       icon: Icons.contacts_outlined,
       title: 'Contacts',
       subtitle: 'Manage your contacts',
-      onTap: () {
-        debugPrint('Contacts tapped');
+      onTap: (context) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ContactsPage(),
+          ),
+        );
       },
     ),
     _SettingItem(
       icon: Icons.info_outline,
       title: 'About App',
       subtitle: 'App version and information',
-      onTap: () {
-        debugPrint('About App tapped');
+      onTap: (context) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProfilePage(),
+          ),
+        );
       },
     ),
+
   ];
 
 
@@ -76,7 +104,7 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: item.onTap,
+      onTap: () => item.onTap(context),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(14),
@@ -198,7 +226,7 @@ class _SettingItem {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final void Function(BuildContext context) onTap;
 
   const _SettingItem({
     required this.icon,
@@ -207,4 +235,5 @@ class _SettingItem {
     required this.onTap,
   });
 }
+
 
