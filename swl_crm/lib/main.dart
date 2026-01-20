@@ -18,8 +18,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      // home: const SplashScreen(),
-       home: const NavWrapper(),
+       home: const SplashScreen(),
+      // home: const NavWrapper(),
       //home: const ProductsPage(),
       // home: const ContactsPage(),
       //home: const ProfilePage(),

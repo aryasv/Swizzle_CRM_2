@@ -3,7 +3,7 @@ import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class CustomTabItem {
   final String label;
-  final int? count; 
+  final int? count;
 
   const CustomTabItem({
     required this.label,
