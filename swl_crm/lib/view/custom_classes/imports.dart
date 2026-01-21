@@ -58,6 +58,7 @@ export 'package:swl_crm/view/deals/deals_list.dart';
 //Folder > products
 export 'package:swl_crm/view/products/products_page.dart';
 export 'package:swl_crm/view/products/products_list.dart';
+export 'package:swl_crm/view/products/products_create_page.dart';
 
 //Folder > profile
 export 'package:swl_crm/view/profile/profile_page.dart';
