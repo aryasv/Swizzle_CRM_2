@@ -1,80 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:swl_crm/view/models/contacts_model.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class ContactsList extends StatelessWidget {
-  const ContactsList({super.key});
+  final List<ContactModel> contacts;
 
-  // Static list
-  static final List<Map<String, String>> _contacts = [
-    {
-      'name': 'John Smith',
-      'company': 'TechCorp Solutions',
-      'email': 'john.smith@techcorp.com',
-      'phone': '+1 (555) 123-4567',
-      'initials': 'JS',
-    },
-    {
-      'name': 'Sarah Johnson',
-      'company': 'Innovate Labs',
-      'email': 'sarah.j@innovate.io',
-      'phone': '+1 (555) 234-5678',
-      'initials': 'SJ',
-    },
-    {
-      'name': 'Michael Chen',
-      'company': 'DataFlow Systems',
-      'email': 'm.chen@dataflow.com',
-      'phone': '+1 (555) 345-6789',
-      'initials': 'MC',
-    },
-    {
-      'name': 'Emily Rodriguez',
-      'company': 'Global Ventures Inc',
-      'email': 'emily.r@globalventures.com',
-      'phone': '+1 (555) 456-7890',
-      'initials': 'ER',
-    },
-    {
-      'name': 'David Park',
-      'company': 'CloudNine Technologies',
-      'email': 'david.park@cloudnine.tech',
-      'phone': '+1 (555) 567-8901',
-      'initials': 'DP',
-    },
-  ];
+  const ContactsList({
+    super.key,
+    required this.contacts,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (contacts.isEmpty) {
+      return const Center(
+        child: Text(
+          'No contacts found',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _contacts.length,
+      itemCount: contacts.length,
       itemBuilder: (context, index) {
-        final c = _contacts[index];
-        return _ContactCard(
-          name: c['name']!,
-          company: c['company']!,
-          email: c['email']!,
-          phone: c['phone']!,
-          initials: c['initials']!,
-        );
+        final contact = contacts[index];
+
+        return _ContactCard(contact: contact);
       },
     );
   }
 }
 
 class _ContactCard extends StatelessWidget {
-  final String name;
-  final String company;
-  final String email;
-  final String phone;
-  final String initials;
+  final ContactModel contact;
 
   const _ContactCard({
-    required this.name,
-    required this.company,
-    required this.email,
-    required this.phone,
-    required this.initials,
+    required this.contact,
   });
 
   @override
@@ -101,7 +64,7 @@ class _ContactCard extends StatelessWidget {
             radius: 28,
             backgroundColor: const Color(0xFFE8F1FD),
             child: Text(
-              initials,
+              contact.initials,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF2A7DE1),
@@ -117,18 +80,18 @@ class _ContactCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  contact.name,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 6),
-                _InfoRow(Icons.business, company),
+                _InfoRow(Icons.business, contact.companyName),
                 const SizedBox(height: 4),
-                _InfoRow(Icons.email_outlined, email),
+                _InfoRow(Icons.email_outlined, contact.email),
                 const SizedBox(height: 4),
-                _InfoRow(Icons.phone_outlined, phone),
+                _InfoRow(Icons.phone_outlined, contact.phone),
               ],
             ),
           ),
@@ -138,7 +101,7 @@ class _ContactCard extends StatelessWidget {
             padding: EdgeInsets.zero,
             child: const Icon(Icons.more_vert, size: 20),
             onSelected: (value) {
-              debugPrint('$value clicked for $name');
+              debugPrint('$value clicked for ${contact.name}');
             },
             itemBuilder: (context) => const [
               PopupMenuItem(
@@ -196,3 +159,4 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
+

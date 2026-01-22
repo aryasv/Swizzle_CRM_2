@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/contacts_model.dart';
 
 class ContactsPage extends StatefulWidget {
   const ContactsPage({super.key});
@@ -11,22 +12,89 @@ class ContactsPage extends StatefulWidget {
 class _ContactsPageState extends State<ContactsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final WebFunctions _api = WebFunctions();
+
+  bool _isLoading = true;
+  String _error = '';
+
+  ContactsResponse? _activeContactsResponse;
+  ContactsResponse? _inactiveContactsResponse;
+
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() => setState(() {}));
+
+    _loadContacts();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<void> _loadContacts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // ACTIVE
+    final activeResponse = await _api.contacts(
+      context: context,
+      status: "active",
+      page: 1,
+    );
+
+    // INACTIVE
+    final inactiveResponse = await _api.contacts(
+      context: context,
+      status: "inactive",
+      page: 1,
+    );
+
+    if (!mounted) return;
+
+    if (activeResponse.result && inactiveResponse.result) {
+      setState(() {
+        _activeContactsResponse =
+            ContactsResponse.fromJson(activeResponse.response!);
+        _inactiveContactsResponse =
+            ContactsResponse.fromJson(inactiveResponse.response!);
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = activeResponse.error.isNotEmpty
+            ? activeResponse.error
+            : inactiveResponse.error;
+        _isLoading = false;
+      });
+    }
+  }
+
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF5F5F5),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showError(_error);
+      });
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
@@ -40,31 +108,50 @@ class _ContactsPageState extends State<ContactsPage>
           // Tabs
           CustomTabBar(
             controller: _tabController,
-            tabs: const [
-              CustomTabItem(label: 'Active', count: 15),
-              CustomTabItem(label: 'Inactive', count: 5),
+            fontSize: 16,
+            tabs: [
+              CustomTabItem(
+                label: 'Active',
+                count: _activeContactsResponse?.contacts.length ?? 0,
+              ),
+              CustomTabItem(
+                label: 'Inactive',
+                count: _inactiveContactsResponse?.contacts.length ?? 0,
+              ),
             ],
           ),
+
+
 
           // List
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
-                ContactsList(),
-                ContactsList(),
+              children: [
+                // Active contacts
+                ContactsList(
+                  contacts: _activeContactsResponse?.contacts ?? [],
+                ),
+
+                // Inactive contacts
+                ContactsList(
+                  contacts: _inactiveContactsResponse?.contacts ?? [],
+                ),
               ],
             ),
           ),
         ],
       ),
 
-      // Add contact
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
-        onPressed: () {},
+        onPressed: () {
+
+        },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 }
+
+
