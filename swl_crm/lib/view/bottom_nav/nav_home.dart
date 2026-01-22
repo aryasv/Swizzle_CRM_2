@@ -1,11 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/dashboard_model.dart';
 
-class NavHome extends StatelessWidget {
+class NavHome extends StatefulWidget {
   const NavHome({super.key});
 
   @override
+  State<NavHome> createState() => _NavHomeState();
+}
+
+class _NavHomeState extends State<NavHome> {
+  final WebFunctions _api = WebFunctions();
+
+  bool _isLoading = true;
+  String _error = '';
+
+  DashboardModel? dashboard;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboard();
+  }
+
+  // Dashboard API
+  Future<void> _loadDashboard() async {
+    final response = await _api.dashboard(context: context);
+
+    if (!mounted) return;
+
+    if (response.result && response.response != null) {
+      final data = response.response!['data'];
+
+      setState(() {
+        dashboard = DashboardModel.fromJson(data);
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = response.error.isNotEmpty
+            ? response.error
+            : 'Failed to load dashboard';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF5F5F5),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showError(_error);
+      });
+    }
+
+    if (dashboard == null) {
+      return const SizedBox.shrink();
+    }
+
+    final stats = dashboard!.statistics;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -14,7 +86,7 @@ class NavHome extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              //  Header
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -26,29 +98,28 @@ class NavHome extends StatelessWidget {
                     ),
                   ),
                   Row(
-                    children: const [
+                    children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Sarah Johnson',
-                            style: TextStyle(
+                            dashboard!.user.name,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          SizedBox(height: 2),
                           Text(
-                            'Sales Manager',
-                            style: TextStyle(
+                            dashboard!.user.role,
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(width: 10),
-                      CircleAvatar(
+                      const SizedBox(width: 10),
+                      const CircleAvatar(
                         radius: 18,
                         backgroundColor: Color(0xFFE8F1FD),
                         child: Icon(
@@ -63,7 +134,7 @@ class NavHome extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              //  Welcome Card
+              // Welcome Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -80,38 +151,42 @@ class NavHome extends StatelessWidget {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Welcome back, Sarah Johnson!',
-                      style: TextStyle(
+                      'Welcome back, ${dashboard!.user.name}!',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
+
+                    // Company and Role row
                     Row(
                       children: [
-                        Icon(Icons.business, size: 14, color: Colors.grey),
-                        SizedBox(width: 6),
+                        const Icon(Icons.business,
+                            size: 14, color: Colors.grey),
+                        const SizedBox(width: 6),
                         Text(
-                          'Swizzle Innovations',
-                          style: TextStyle(fontSize: 14),
+                          dashboard!.account.name,
+                          style: const TextStyle(fontSize: 14),
                         ),
-                        SizedBox(width: 10),
-                        Icon(Icons.verified_user,
+                        const SizedBox(width: 10),
+                        const Icon(Icons.verified_user,
                             size: 14, color: Color(0xFF2A7DE1)),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
-                          'Sales Manager',
-                          style: TextStyle(fontSize: 14),
+                          dashboard!.user.role,
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
-                    SizedBox(height: 6),
+
+                    const SizedBox(height: 6),
                     Text(
-                      'Monday, January 5, 2026',
-                      style: TextStyle(
-                        fontSize: 14,
+                      dashboard!.currentDate,
+                      style: const TextStyle(
+                        fontSize: 12,
                         color: Colors.grey,
                       ),
                     ),
@@ -121,7 +196,7 @@ class NavHome extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Grid Cards
+              // Grid View
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -129,56 +204,34 @@ class NavHome extends StatelessWidget {
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.3,
-                children: const [
-                  _StatCard(
-                    icon: Icons.inventory_2_outlined,
-                    iconBg: Color(0xFFE8F1FD),
-                    iconColor: Color(0xFF2A7DE1),
-                    value: '30',
-                    label: 'Total Products',
-                  ),
-                  _StatCard(
-                    icon: Icons.apartment_outlined,
-                    iconBg: Color(0xFFE8F6E8),
-                    iconColor: Colors.green,
-                    value: '50',
-                    label: 'Total Companies',
-                  ),
-                  _StatCard(
-                    icon: Icons.people_outline,
-                    iconBg: Color(0xFFFFF3CD),
-                    iconColor: Colors.orange,
-                    value: '50',
-                    label: 'Total Contacts',
-                  ),
-                  _StatCard(
-                    icon: Icons.check_circle_outline,
-                    iconBg: Color(0xFFFCE4EC),
-                    iconColor: Colors.pink,
-                    value: '20',
-                    label: 'Total Tasks',
-                  ),
-                ],
+                children: dashboard!.statistics.map((stat) {
+                  return _StatCard(
+                    iconUrl: stat.icon,
+                    value: stat.total.toString(),
+                    label: stat.label,
+                  );
+                }).toList(),
               ),
+
 
               const SizedBox(height: 20),
 
-              //  Account Information
+              // Account Information
               const _SectionTitle(title: 'Account Information'),
-
               _InfoBlock(
-                items: const [
+                items: [
                   _InfoItem(
-                      label: 'Account Name',
-                      value: 'Swizzle Innovations'
+                    label: 'Account Name',
+                    value: dashboard!.account.name,
                   ),
                   _InfoItem(
                     label: 'Currency',
-                    value: '₹ INR (Indian Rupee)',
+                    value:
+                    '${dashboard!.account.currencySymbol} ${dashboard!.account.currencyCode} (${dashboard!.account.currencyName})',
                   ),
                   _InfoItem(
                     label: 'Total Team Members',
-                    value: '5 Users',
+                    value: dashboard!.account.totalUsers.toString(),
                   ),
                 ],
               ),
@@ -187,16 +240,17 @@ class NavHome extends StatelessWidget {
 
               //  Team Overview
               const _SectionTitle(title: 'Team Overview'),
-
               _InfoBlock(
-                items: const [
+                items: [
                   _InfoItem(
-                      label: 'Account Admins',
-                      value: '0'
+                    label: 'Account Admins',
+                    value:
+                    dashboard!.teamOverview.adminUsers.toString(),
                   ),
                   _InfoItem(
-                      label: 'Staff Members',
-                      value: '5'
+                    label: 'Staff Members',
+                    value:
+                    dashboard!.teamOverview.staffMembers.toString(),
                   ),
                 ],
                 trailingIcons: true,
@@ -209,18 +263,13 @@ class NavHome extends StatelessWidget {
   }
 }
 
-
 class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
+  final String iconUrl;
   final String value;
   final String label;
 
   const _StatCard({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
+    required this.iconUrl,
     required this.value,
     required this.label,
   });
@@ -243,16 +292,30 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Icon container
           Container(
             width: 40,
             height: 40,
+            //padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconBg,
+              //color: const Color(0xFFE8F1FD),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Image.network(
+              iconUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) {
+                return const Icon(
+                  Icons.bar_chart,
+                  color: Color(0xFF2A7DE1),
+                  size: 40,
+                );
+              },
+            ),
           ),
+
           const SizedBox(height: 16),
+
           Text(
             value,
             style: const TextStyle(
@@ -260,7 +323,9 @@ class _StatCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+
           const SizedBox(height: 4),
+
           Text(
             label,
             style: const TextStyle(
@@ -273,6 +338,7 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
+
 
 class _SectionTitle extends StatelessWidget {
   final String title;
@@ -377,4 +443,3 @@ class _InfoItem {
     required this.value,
   });
 }
-
