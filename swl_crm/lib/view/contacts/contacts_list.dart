@@ -5,11 +5,13 @@ import 'package:swl_crm/view/custom_classes/imports.dart';
 class ContactsList extends StatelessWidget {
   final List<ContactModel> contacts;
   final VoidCallback onRefresh;
+  final bool isActiveTab;
 
   const ContactsList({
     super.key,
     required this.contacts,
     required this.onRefresh,
+    required this.isActiveTab,
   });
 
   @override
@@ -32,6 +34,7 @@ class ContactsList extends StatelessWidget {
         return _ContactCard(
           contact: contact,
           onRefresh: onRefresh,
+          isActiveTab: isActiveTab,
         );
       },
     );
@@ -41,11 +44,55 @@ class ContactsList extends StatelessWidget {
 class _ContactCard extends StatelessWidget {
   final ContactModel contact;
   final VoidCallback onRefresh;
+  final bool isActiveTab;
 
   const _ContactCard({
     required this.contact,
     required this.onRefresh,
+    required this.isActiveTab,
   });
+
+  Future<bool> _confirmAction(
+      BuildContext context,
+      String title,
+      String message,
+      ) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+  }
+
+  void _showSnack(
+      BuildContext context,
+      String message, {
+        bool isError = false,
+      }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: isError ? Colors.red : Colors.green,
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +155,9 @@ class _ContactCard extends StatelessWidget {
             padding: EdgeInsets.zero,
             child: const Icon(Icons.more_vert, size: 20),
             onSelected: (value) async {
+              final api = WebFunctions();
+
+              // EDIT
               if (value == 'edit') {
                 final result = await Navigator.push(
                   context,
@@ -120,31 +170,105 @@ class _ContactCard extends StatelessWidget {
                   onRefresh();
                 }
               }
+
+              // DEACTIVATE
+              if (value == 'deactivate') {
+                final confirmed = await _confirmAction(
+                  context,
+                  'Deactivate Contact',
+                  'Are you sure you want to deactivate this contact?',
+                );
+
+                if (!confirmed) return;
+
+                final response = await api.deleteContact(
+                  context: context,
+                  clientUuid: contact.uuid,
+                  clientId: contact.id,
+                  action: 'deactivate',
+                );
+
+                if (!context.mounted) return;
+
+                if (response.result) {
+                  _showSnack(context, 'Contact deactivated');
+                  onRefresh();
+                } else {
+                  _showSnack(context, response.error, isError: true);
+                }
+              }
+
+              // ACTIVATE
+              if (value == 'activate') {
+                final confirmed = await _confirmAction(
+                  context,
+                  'Activate Contact',
+                  'Do you want to activate this contact?',
+                );
+
+                if (!confirmed) return;
+
+                final response = await api.deleteContact(
+                  context: context,
+                  clientUuid: contact.uuid,
+                  clientId: contact.id,
+                  action: 'activate',
+                );
+
+                if (!context.mounted) return;
+
+                if (response.result) {
+                  _showSnack(context, 'Contact activated');
+                  onRefresh();
+                } else {
+                  _showSnack(context, response.error, isError: true);
+                }
+              }
             },
 
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 18, color: Colors.green),
-                    SizedBox(width: 10),
-                    Text('Edit'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, size: 18, color: Colors.red),
-                    SizedBox(width: 10),
-                    Text('Delete'),
-                  ],
-                ),
-              ),
-            ],
+            itemBuilder: (context) {
+              if (isActiveTab) {
+                // ACTIVE TAB MENU
+                return const [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 18, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'deactivate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, size: 18, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text('Deactivate'),
+                      ],
+                    ),
+                  ),
+                ];
+              } else {
+                // INACTIVE TAB MENU
+                return const [
+                  PopupMenuItem(
+                    value: 'activate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 18, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text('Activate'),
+                      ],
+                    ),
+                  ),
+                ];
+              }
+            },
           ),
+
         ],
       ),
     );

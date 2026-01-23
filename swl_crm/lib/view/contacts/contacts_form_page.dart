@@ -156,7 +156,12 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       c.name.split(' ').length > 1 ? c.name.split(' ').last : '';
       email.text = c.email;
       phone.text = c.phone;
-      selectedCompanyId = c.companyId;
+      if (companies.containsKey(c.companyId)) {
+        selectedCompanyId = c.companyId;
+      } else {
+        selectedCompanyId = null;
+      }
+
     }
   }
 

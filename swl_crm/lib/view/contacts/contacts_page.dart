@@ -133,12 +133,15 @@ class _ContactsPageState extends State<ContactsPage>
                 ContactsList(
                   contacts: _activeContactsResponse?.contacts ?? [],
                   onRefresh: _loadContacts,
+                  isActiveTab: true,
+
                 ),
 
                 // Inactive contacts
                 ContactsList(
                   contacts: _inactiveContactsResponse?.contacts ?? [],
                   onRefresh: _loadContacts,
+                  isActiveTab: false,
                 ),
 
 
