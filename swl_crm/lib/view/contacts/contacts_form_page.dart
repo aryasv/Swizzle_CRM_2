@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:swl_crm/view/custom_classes/custom_app_bar.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class ContactsFormPage extends StatefulWidget {
@@ -10,20 +9,19 @@ class ContactsFormPage extends StatefulWidget {
 }
 
 class _ContactsFormPageState extends State<ContactsFormPage> {
+  final WebFunctions _api = WebFunctions();
 
-  String? selectedCompany;
-
-  final List<String> companies = [
-    'TechCorp Solutions',
-    'Innovate Labs',
-    'DataFlow Systems',
-    'Global Ventures',
-  ];
-
+  bool isSaving = false;
 
   bool contactExpanded = true;
   bool addressExpanded = false;
 
+  String? selectedCompany;
+
+  // Static List
+  final Map<String, int> companies = {
+    'Acme Corporation': 18,
+  };
 
   final TextEditingController firstName = TextEditingController();
   final TextEditingController lastName = TextEditingController();
@@ -60,6 +58,65 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
     super.dispose();
   }
 
+
+  Future<void> _saveContact() async {
+    if (firstName.text.trim().isEmpty) {
+      _showError('First name is required');
+      return;
+    }
+
+    if (email.text.trim().isEmpty) {
+      _showError('Email is required');
+      return;
+    }
+
+    setState(() => isSaving = true);
+
+    final response = await _api.storeContact(
+      context: context,
+      contactData: {
+        "first_name": firstName.text.trim(),
+        "last_name": lastName.text.trim(),
+        "title": title.text.trim(),
+        "email": email.text.trim(),
+        "phone": phone.text.trim(),
+        "company_id": 18,
+        "mobile_phone": mobile.text.trim(),
+        "home_phone": homePhone.text.trim(),
+        "email_opt_out": emailOptOut ? "1" : "0",
+        "description": description.text.trim(),
+        "mailing_street": street.text.trim(),
+        "mailing_city": city.text.trim(),
+        "mailing_state": state.text.trim(),
+        "mailing_country": country.text.trim(),
+        "mailing_zip": zip.text.trim(),
+      },
+    );
+
+    if (!mounted) return;
+
+    setState(() => isSaving = false);
+
+    if (response.result) {
+      // refresh
+      Navigator.pop(context, true);
+    } else {
+      _showError(response.error.isNotEmpty
+          ? response.error
+          : 'Failed to create contact');
+    }
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,44 +133,34 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Contact Information
                   _buildAccordion(
                     title: 'Contact Information',
                     isExpanded: contactExpanded,
-                    onTap: () {
-                      setState(() => contactExpanded = !contactExpanded);
-                    },
+                    onTap: () =>
+                        setState(() => contactExpanded = !contactExpanded),
                     child: Column(
                       children: [
                         _field('First Name', firstName, 'Enter first name'),
                         _field('Last Name', lastName, 'Enter last name'),
                         _field('Title', title, 'Enter title'),
-                        _field('Email', email, 'Enter email',
-                            keyboard: TextInputType.emailAddress),
-                        _field('Phone', phone, 'Enter phone',
-                            keyboard: TextInputType.phone),
+                        _field('Email', email, 'Enter email'),
+                        _field('Phone', phone, 'Enter phone'),
                         _companyDropdown(),
-                        _field('Mobile', mobile, 'Enter mobile',
-                            keyboard: TextInputType.phone),
-                        _field('Home Phone', homePhone, 'Enter home phone',
-                            keyboard: TextInputType.phone),
-
-                        // Email Check box
+                        _field('Mobile', mobile, 'Enter mobile'),
+                        _field('Home Phone', homePhone, 'Enter home phone'),
                         Row(
                           children: [
                             Transform.translate(
                               offset: const Offset(-8, 0),
                               child: Checkbox(
                                 value: emailOptOut,
-                                onChanged: (val) {
-                                  setState(() => emailOptOut = val ?? false);
-                                },
+                                onChanged: (v) =>
+                                    setState(() => emailOptOut = v ?? false),
                               ),
                             ),
                             const Text('Email Opt Out'),
                           ],
                         ),
-
                         _field(
                           'Description',
                           description,
@@ -126,81 +173,76 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
 
                   const SizedBox(height: 16),
 
-                  // Address Information
                   _buildAccordion(
                     title: 'Address Information',
                     isExpanded: addressExpanded,
-                    onTap: () {
-                      setState(() => addressExpanded = !addressExpanded);
-                    },
+                    onTap: () =>
+                        setState(() => addressExpanded = !addressExpanded),
                     child: Column(
                       children: [
-                        _field('Mailing Street', street,
-                            'Enter mailing street'),
-                        _field('Mailing City', city, 'Enter mailing city'),
-                        _field('Mailing State', state, 'Enter mailing state'),
-                        _field(
-                            'Mailing Country', country, 'Enter mailing country'),
-                        _field('Mailing Zip', zip, 'Enter mailing zip',
-                            keyboard: TextInputType.number),
+                        _field('Street', street, 'Enter street'),
+                        _field('City', city, 'Enter city'),
+                        _field('State', state, 'Enter state'),
+                        _field('Country', country, 'Enter country'),
+                        _field('Zip', zip, 'Enter zip'),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  //  Buttons
+
+
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          onPressed: () => Navigator.pop(context),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xffffffff),
+                            backgroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             side: const BorderSide(color: Colors.blue),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-
                           child: const Text(
-                            'Cancel',
+                              'Cancel',
                             style: TextStyle(color: Colors.blue),
                           ),
+
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () {
-
-                          },
+                          onPressed: isSaving ? null : _saveContact,
+                          icon: isSaving
+                              ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                              : const Icon(Icons.check, color: Colors.white,),
+                          label: const Text(
+                              'Save Contact',
+                            style: TextStyle(color: Colors.white),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2A7DE1),
+                            backgroundColor: Colors.blue,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             side: const BorderSide(color: Colors.blue),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          icon: const Icon(
-                              Icons.check,
-                            color: Colors.white,
-
-                          ),
-                          label: const Text(
-                              'Save Contact',
-                            style: TextStyle(color: Colors.white),
-
-                          ),
                         ),
                       ),
                     ],
                   ),
-
                   SizedBox(height: 48,)
                 ],
               ),
@@ -211,7 +253,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
     );
   }
 
-  // UI
+  //
 
   Widget _buildAccordion({
     required String title,
@@ -224,11 +266,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 6),
         ],
       ),
       child: Column(
@@ -239,22 +277,19 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.folder_open, color: Color(0xFF2A7DE1)),
+                  const Icon(Icons.folder_open,
+                      color: Color(0xFF2A7DE1)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                          fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                  ),
+                  Icon(isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down),
                 ],
               ),
             ),
@@ -274,7 +309,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       String label,
       TextEditingController controller,
       String hint, {
-        TextInputType keyboard = TextInputType.text,
         int maxLines = 1,
       }) {
     return Padding(
@@ -288,7 +322,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
           const SizedBox(height: 6),
           TextField(
             controller: controller,
-            keyboardType: keyboard,
             maxLines: maxLines,
             decoration: InputDecoration(
               hintText: hint,
@@ -300,12 +333,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
               ),
             ),
           ),
-          // Validation placeholder
-          const SizedBox(height: 4),
-          // Example:
-          // Text('This field is required',
-          //   style: TextStyle(color: Colors.red, fontSize: 12),
-          // ),
         ],
       ),
     );
@@ -327,35 +354,19 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             value: selectedCompany,
-            items: companies.map((company) {
-              return DropdownMenuItem<String>(
-                value: company,
-                child: Text(company),
-              );
+            items: companies.keys.map((name) {
+              return DropdownMenuItem(value: name, child: Text(name));
             }).toList(),
-            onChanged: (value) {
-              setState(() {
-                selectedCompany = value;
-              });
-            },
-            decoration: InputDecoration(
-              hintText: 'Select an option',
+            onChanged: (v) => setState(() => selectedCompany = v),
+            decoration: const InputDecoration(
+              hintText: 'Select Company',
               filled: true,
-              fillColor: const Color(0xFFF9F9F9),
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
+              fillColor: Color(0xFFF9F9F9),
             ),
-            icon: const Icon(Icons.keyboard_arrow_down),
           ),
-
-
         ],
       ),
     );
   }
-
 }
+

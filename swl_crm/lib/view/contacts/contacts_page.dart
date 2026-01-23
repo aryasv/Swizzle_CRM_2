@@ -21,6 +21,7 @@ class _ContactsPageState extends State<ContactsPage>
   ContactsResponse? _inactiveContactsResponse;
 
 
+
   @override
   void initState() {
     super.initState();
@@ -145,9 +146,19 @@ class _ContactsPageState extends State<ContactsPage>
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
-        onPressed: () {
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ContactsFormPage(),
+            ),
+          );
 
+          if (result == true) {
+            _loadContacts();
+          }
         },
+
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
