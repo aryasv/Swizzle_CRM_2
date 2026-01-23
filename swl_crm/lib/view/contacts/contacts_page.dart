@@ -132,15 +132,20 @@ class _ContactsPageState extends State<ContactsPage>
                 // Active contacts
                 ContactsList(
                   contacts: _activeContactsResponse?.contacts ?? [],
+                  onRefresh: _loadContacts,
                 ),
 
                 // Inactive contacts
                 ContactsList(
                   contacts: _inactiveContactsResponse?.contacts ?? [],
+                  onRefresh: _loadContacts,
                 ),
+
+
               ],
             ),
           ),
+          SizedBox(height: 48,)
         ],
       ),
 

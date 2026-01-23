@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/contacts_model.dart';
 
 class ContactsFormPage extends StatefulWidget {
-  const ContactsFormPage({super.key});
+
+  final ContactModel? contact;
+
+  const ContactsFormPage({
+    super.key,
+    this.contact,
+  });
 
   @override
   State<ContactsFormPage> createState() => _ContactsFormPageState();
@@ -11,17 +18,19 @@ class ContactsFormPage extends StatefulWidget {
 class _ContactsFormPageState extends State<ContactsFormPage> {
   final WebFunctions _api = WebFunctions();
 
+  bool get isEdit => widget.contact != null;
   bool isSaving = false;
-
   bool contactExpanded = true;
   bool addressExpanded = false;
 
-  String? selectedCompany;
+  int? selectedCompanyId;
+
 
   // Static List
-  final Map<String, int> companies = {
-    'Acme Corporation': 18,
+  final Map<int, String> companies = {
+    18: 'Ace Corporation',
   };
+
 
   final TextEditingController firstName = TextEditingController();
   final TextEditingController lastName = TextEditingController();
@@ -72,40 +81,59 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
 
     setState(() => isSaving = true);
 
-    final response = await _api.storeContact(
-      context: context,
-      contactData: {
-        "first_name": firstName.text.trim(),
-        "last_name": lastName.text.trim(),
-        "title": title.text.trim(),
-        "email": email.text.trim(),
-        "phone": phone.text.trim(),
-        "company_id": 18,
-        "mobile_phone": mobile.text.trim(),
-        "home_phone": homePhone.text.trim(),
-        "email_opt_out": emailOptOut ? "1" : "0",
-        "description": description.text.trim(),
-        "mailing_street": street.text.trim(),
-        "mailing_city": city.text.trim(),
-        "mailing_state": state.text.trim(),
-        "mailing_country": country.text.trim(),
-        "mailing_zip": zip.text.trim(),
-      },
-    );
+    final Map<String, dynamic> payload = {
+      "first_name": firstName.text.trim(),
+      "last_name": lastName.text.trim(),
+      "title": title.text.trim(),
+      "email": email.text.trim(),
+      "phone": phone.text.trim(),
+      "company_id": selectedCompanyId,
+      "mobile_phone": mobile.text.trim(),
+      "home_phone": homePhone.text.trim(),
+      "email_opt_out": emailOptOut ? "1" : "0",
+      "description": description.text.trim(),
+      "mailing_street": street.text.trim(),
+      "mailing_city": city.text.trim(),
+      "mailing_state": state.text.trim(),
+      "mailing_country": country.text.trim(),
+      "mailing_zip": zip.text.trim(),
+    };
+
+    late ApiResponse response;
+
+    if (isEdit) {
+
+      response = await _api.updateContact(
+        context: context,
+        clientUuid: widget.contact!.uuid,
+        contactData: {
+          "client_id": widget.contact!.id,
+          ...payload,
+        },
+      );
+    } else {
+
+      response = await _api.storeContact(
+        context: context,
+        contactData: payload,
+      );
+    }
 
     if (!mounted) return;
 
     setState(() => isSaving = false);
 
     if (response.result) {
-      // refresh
       Navigator.pop(context, true);
     } else {
-      _showError(response.error.isNotEmpty
-          ? response.error
-          : 'Failed to create contact');
+      _showError(
+        response.error.isNotEmpty
+            ? response.error
+            : 'Failed to save contact',
+      );
     }
   }
+
 
   void _showError(String msg) {
     if (!mounted) return;
@@ -118,15 +146,32 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    if (isEdit) {
+      final c = widget.contact!;
+      firstName.text = c.name.split(' ').first;
+      lastName.text =
+      c.name.split(' ').length > 1 ? c.name.split(' ').last : '';
+      email.text = c.email;
+      phone.text = c.phone;
+      selectedCompanyId = c.companyId;
+    }
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          const CustomAppBar(
-            title: 'Add New Contact',
+          CustomAppBar(
+            title: isEdit ? 'Edit Contact' : 'Add New Contact',
             showBack: true,
           ),
+
 
           Expanded(
             child: SingleChildScrollView(
@@ -346,27 +391,36 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
         children: [
           const Text(
             'Company',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            value: selectedCompany,
-            items: companies.keys.map((name) {
-              return DropdownMenuItem(value: name, child: Text(name));
+          DropdownButtonFormField<int>(
+            value: selectedCompanyId,
+            items: companies.entries.map((entry) {
+              return DropdownMenuItem<int>(
+                value: entry.key,
+                child: Text(entry.value),
+              );
             }).toList(),
-            onChanged: (v) => setState(() => selectedCompany = v),
-            decoration: const InputDecoration(
+            onChanged: (value) {
+              setState(() {
+                selectedCompanyId = value;
+              });
+            },
+            decoration: InputDecoration(
               hintText: 'Select Company',
               filled: true,
-              fillColor: Color(0xFFF9F9F9),
+              fillColor: const Color(0xFFF9F9F9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
 }
 

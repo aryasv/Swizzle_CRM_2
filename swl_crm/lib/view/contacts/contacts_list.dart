@@ -4,10 +4,12 @@ import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class ContactsList extends StatelessWidget {
   final List<ContactModel> contacts;
+  final VoidCallback onRefresh;
 
   const ContactsList({
     super.key,
     required this.contacts,
+    required this.onRefresh,
   });
 
   @override
@@ -27,7 +29,10 @@ class ContactsList extends StatelessWidget {
       itemBuilder: (context, index) {
         final contact = contacts[index];
 
-        return _ContactCard(contact: contact);
+        return _ContactCard(
+          contact: contact,
+          onRefresh: onRefresh,
+        );
       },
     );
   }
@@ -35,9 +40,11 @@ class ContactsList extends StatelessWidget {
 
 class _ContactCard extends StatelessWidget {
   final ContactModel contact;
+  final VoidCallback onRefresh;
 
   const _ContactCard({
     required this.contact,
+    required this.onRefresh,
   });
 
   @override
@@ -100,9 +107,21 @@ class _ContactCard extends StatelessWidget {
           PopupMenuButton<String>(
             padding: EdgeInsets.zero,
             child: const Icon(Icons.more_vert, size: 20),
-            onSelected: (value) {
-              debugPrint('$value clicked for ${contact.name}');
+            onSelected: (value) async {
+              if (value == 'edit') {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ContactsFormPage(contact: contact),
+                  ),
+                );
+
+                if (result == true) {
+                  onRefresh();
+                }
+              }
             },
+
             itemBuilder: (context) => const [
               PopupMenuItem(
                 value: 'edit',
