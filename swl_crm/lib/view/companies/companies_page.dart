@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_model.dart';
 
+import 'companies_form_page.dart';
+
 class CompaniesPage extends StatefulWidget {
   const CompaniesPage({super.key});
 
@@ -127,11 +129,20 @@ class _CompaniesPageState extends State<CompaniesPage>
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
-        onPressed: () {
-
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const CompaniesFormPage(),
+            ),
+          );
+          if (result == true) {
+            _loadCompanies();
+          }
         },
         child: const Icon(Icons.add, color: Colors.white),
       ),
+
     );
   }
 }

@@ -15,6 +15,8 @@ class CompaniesFormPage extends StatefulWidget {
 }
 
 class _CompaniesFormPageState extends State<CompaniesFormPage> {
+  final WebFunctions _api = WebFunctions();
+
   bool get isEdit => widget.company != null;
 
   bool isSaving = false;
@@ -58,6 +60,115 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
     cfPicklist.dispose();
     super.dispose();
   }
+
+  Future<void> _saveCompany() async {
+
+    if (companyName.text.trim().isEmpty) {
+      _showError('Company name is required');
+      return;
+    }
+
+    if (phone.text.trim().isEmpty) {
+      _showError('Phone is required');
+      return;
+    }
+
+    if (email.text.trim().isEmpty) {
+      _showError('Email is required');
+      return;
+    }
+
+    if (street.text.trim().isEmpty) {
+      _showError('Billing address is required');
+      return;
+    }
+
+    if (city.text.trim().isEmpty) {
+      _showError('City is required');
+      return;
+    }
+
+    if (country.text.trim().isEmpty) {
+      _showError('Country is required');
+      return;
+    }
+
+    if (cfPicklist.text.trim().isEmpty) {
+      _showError('CF - Picklist is required');
+      return;
+    }
+
+    if (cfLookup == null) {
+      _showError('CF - Lookup is required');
+      return;
+    }
+
+    setState(() => isSaving = true);
+
+    final Map<String, dynamic> payload = {
+      "name": companyName.text.trim(),
+      "phone": phone.text.trim(),
+      "website": website.text.trim(),
+      "email": email.text.trim(),
+      "address": street.text.trim(),
+      "city": city.text.trim(),
+      "state": state.text.trim(),
+      "country": country.text.trim(),
+      "zip": zip.text.trim(),
+      "billing_code": billingCode.text.trim(),
+
+      "custom_field_68": cfPicklist.text.trim(),
+      "custom_field_69": cfLookup!,
+    };
+
+    if (cfText.text.trim().isNotEmpty) {
+      payload["custom_field_66"] = cfText.text.trim();
+    }
+
+    if (cfDate != null) {
+      payload["custom_field_67"] =
+          cfDate!.toIso8601String().split('T').first;
+    }
+
+    final response = await _api.storeCompany(
+      context: context,
+      companyData: payload,
+    );
+
+    if (!mounted) return;
+
+    setState(() => isSaving = false);
+
+    if (response.result) {
+      Navigator.pop(context, true);
+    } else {
+      _showError(
+        response.error.isNotEmpty
+            ? response.error
+            : 'Failed to create company',
+      );
+    }
+  }
+
+
+
+
+  void _showError(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+
+
 
 
   @override
@@ -152,33 +263,35 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
               ),
             ),
           ),
-        ],
-      ),
-
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: SizedBox(
-          height: 48,
-          child: ElevatedButton(
-            onPressed: isSaving ? null : () {
-
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2A7DE1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(
-              isEdit ? 'Update Company' : 'Create Company',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+          SizedBox(height: 16,),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isSaving ? null : _saveCompany,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2A7DE1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  isEdit ? 'Update Company' : 'Create Company',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          SizedBox(height: 48,)
+        ],
       ),
+
+
     );
   }
 
