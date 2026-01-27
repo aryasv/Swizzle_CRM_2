@@ -3,7 +3,6 @@ import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/contacts_model.dart';
 
 class ContactsFormPage extends StatefulWidget {
-
   final ContactModel? contact;
 
   const ContactsFormPage({
@@ -20,17 +19,16 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
 
   bool get isEdit => widget.contact != null;
   bool isSaving = false;
+  bool isLoadingDetails = false;
   bool contactExpanded = true;
   bool addressExpanded = false;
 
   int? selectedCompanyId;
 
-
   // Static List
   final Map<int, String> companies = {
     18: 'Ace Corporation',
   };
-
 
   final TextEditingController firstName = TextEditingController();
   final TextEditingController lastName = TextEditingController();
@@ -50,6 +48,16 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
   bool emailOptOut = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    if (isEdit) {
+      isLoadingDetails = true;
+      _loadContactDetails();
+    }
+  }
+
+  @override
   void dispose() {
     firstName.dispose();
     lastName.dispose();
@@ -67,6 +75,70 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
     super.dispose();
   }
 
+  Future<void> _loadContactDetails() async {
+    setState(() {});
+
+    final response = await _api.editContact(
+      context: context,
+      clientUuid: widget.contact!.uuid,
+      clientId: widget.contact!.id,
+      accountId: 1,
+    );
+
+    if (!mounted) return;
+
+    if (!response.result || response.response == null) {
+      isLoadingDetails = false;
+      setState(() {});
+      _showError('Failed to load contact details');
+      return;
+    }
+
+    final Map<String, dynamic> root =
+    response.response!.containsKey('data')
+        ? Map<String, dynamic>.from(response.response!['data'])
+        : Map<String, dynamic>.from(response.response!);
+
+    final client = root['client'];
+
+    firstName.text = client['first_name']?.toString() ?? '';
+    lastName.text = client['last_name']?.toString() ?? '';
+    email.text = client['email']?.toString() ?? '';
+    phone.text = client['phone']?.toString() ?? '';
+
+    final int? companyId =
+    int.tryParse(client['company_id']?.toString() ?? '');
+
+    selectedCompanyId =
+    companies.containsKey(companyId) ? companyId : null;
+
+    final List fieldsGroups = root['fields'] ?? [];
+    final Map<String, dynamic> values = {};
+
+    for (final group in fieldsGroups) {
+      final List fields = group['fields'] ?? [];
+      for (final field in fields) {
+        values[field['name']] = field['current_value'];
+      }
+    }
+
+    title.text = values['title']?.toString() ?? '';
+    mobile.text = values['mobile_phone']?.toString() ?? '';
+    homePhone.text = values['home_phone']?.toString() ?? '';
+    description.text = values['description']?.toString() ?? '';
+
+    street.text = values['mailing_street']?.toString() ?? '';
+    city.text = values['mailing_city']?.toString() ?? '';
+    state.text = values['mailing_state']?.toString() ?? '';
+    country.text = values['mailing_country']?.toString() ?? '';
+    zip.text = values['mailing_zip']?.toString() ?? '';
+
+    emailOptOut =
+        values['email_opt_out'] == 1 || values['email_opt_out'] == '1';
+
+    isLoadingDetails = false;
+    setState(() {});
+  }
 
   Future<void> _saveContact() async {
     if (firstName.text.trim().isEmpty) {
@@ -81,7 +153,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
 
     setState(() => isSaving = true);
 
-    final Map<String, dynamic> payload = {
+    final payload = {
       "first_name": firstName.text.trim(),
       "last_name": lastName.text.trim(),
       "title": title.text.trim(),
@@ -102,7 +174,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
     late ApiResponse response;
 
     if (isEdit) {
-
       response = await _api.updateContact(
         context: context,
         clientUuid: widget.contact!.uuid,
@@ -112,7 +183,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
         },
       );
     } else {
-
       response = await _api.storeContact(
         context: context,
         contactData: payload,
@@ -134,7 +204,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
     }
   }
 
-
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -146,28 +215,14 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-
-    if (isEdit) {
-      final c = widget.contact!;
-      firstName.text = c.name.split(' ').first;
-      lastName.text =
-      c.name.split(' ').length > 1 ? c.name.split(' ').last : '';
-      email.text = c.email;
-      phone.text = c.phone;
-      if (companies.containsKey(c.companyId)) {
-        selectedCompanyId = c.companyId;
-      } else {
-        selectedCompanyId = null;
-      }
-
-    }
-  }
-
-
-  @override
   Widget build(BuildContext context) {
+
+    if (isEdit && isLoadingDetails) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
@@ -176,7 +231,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
             title: isEdit ? 'Edit Contact' : 'Add New Contact',
             showBack: true,
           ),
-
 
           Expanded(
             child: SingleChildScrollView(
@@ -193,11 +247,12 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                         _field('First Name', firstName, 'Enter first name'),
                         _field('Last Name', lastName, 'Enter last name'),
                         _field('Title', title, 'Enter title'),
-                        _field('Email', email, 'Enter email'),
-                        _field('Phone', phone, 'Enter phone'),
+                        _field('Email', email, 'Enter email address'),
+                        _field('Phone', phone, 'Enter phone number'),
                         _companyDropdown(),
-                        _field('Mobile', mobile, 'Enter mobile'),
-                        _field('Home Phone', homePhone, 'Enter home phone'),
+                        _field('Mobile', mobile, 'Enter mobile number'),
+                        _field('Home Phone', homePhone, 'Enter home phone number'),
+
                         Row(
                           children: [
                             Transform.translate(
@@ -212,10 +267,10 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                           ],
                         ),
                         _field(
-                          'Description',
-                          description,
-                          'Enter description',
-                          maxLines: 3,
+                            'Description',
+                            description,
+                            'Enter Description',
+                            maxLines: 3
                         ),
                       ],
                     ),
@@ -230,18 +285,17 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                         setState(() => addressExpanded = !addressExpanded),
                     child: Column(
                       children: [
-                        _field('Street', street, 'Enter street'),
+                        _field('Street', street, 'Enter street address'),
                         _field('City', city, 'Enter city'),
                         _field('State', state, 'Enter state'),
                         _field('Country', country, 'Enter country'),
-                        _field('Zip', zip, 'Enter zip'),
+                        _field('Zip', zip, 'Enter zip / postal code'),
+
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 24),
-
-
 
                   Row(
                     children: [
@@ -257,10 +311,9 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                             ),
                           ),
                           child: const Text(
-                              'Cancel',
+                            'Cancel',
                             style: TextStyle(color: Colors.blue),
                           ),
-
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -276,9 +329,9 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                               color: Colors.white,
                             ),
                           )
-                              : const Icon(Icons.check, color: Colors.white,),
+                              : const Icon(Icons.check, color: Colors.white),
                           label: const Text(
-                              'Save Contact',
+                            'Save Contact',
                             style: TextStyle(color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -293,7 +346,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 48,)
+                  const SizedBox(height: 48),
                 ],
               ),
             ),
@@ -302,8 +355,6 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       ),
     );
   }
-
-  //
 
   Widget _buildAccordion({
     required String title,
@@ -315,9 +366,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
-        ],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Column(
         children: [
@@ -366,17 +415,43 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 6),
           TextField(
             controller: controller,
             maxLines: maxLines,
+            cursorColor: const Color(0xFF2A7DE1),
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: const TextStyle(
+                color: Colors.black38,
+                fontSize: 14,
+              ),
               filled: true,
               fillColor: const Color(0xFFF9F9F9),
+
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Colors.black12,
+                  width: 1,
+                ),
+              ),
+
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2A7DE1),
+                  width: 1.5,
+                ),
+              ),
+
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,
@@ -387,6 +462,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       ),
     );
   }
+
 
   Widget _companyDropdown() {
     return Padding(
@@ -407,6 +483,7 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
                 child: Text(entry.value),
               );
             }).toList(),
+
             onChanged: (value) {
               setState(() {
                 selectedCompanyId = value;
@@ -426,6 +503,4 @@ class _ContactsFormPageState extends State<ContactsFormPage> {
       ),
     );
   }
-
 }
-
