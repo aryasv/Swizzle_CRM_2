@@ -48,7 +48,7 @@ class CompanyModel {
     );
   }
 
-  
+
   String get initials {
     if (name.isEmpty) return '';
     final parts = name.trim().split(' ');
