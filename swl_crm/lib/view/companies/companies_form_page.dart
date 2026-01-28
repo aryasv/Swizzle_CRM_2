@@ -78,6 +78,12 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
       return;
     }
 
+    if (website.text.trim().isNotEmpty &&
+        !website.text.trim().startsWith('http')) {
+      _showError('Website must start with https://');
+      return;
+    }
+
     if (street.text.trim().isEmpty) {
       _showError('Billing address is required');
       return;
@@ -125,10 +131,15 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
       payload["custom_field_66"] = cfText.text.trim();
     }
 
+    payload["custom_field_68"] = "2";
+
     if (cfDate != null) {
       payload["custom_field_67"] =
-          cfDate!.toIso8601String().split('T').first;
+      '${cfDate!.month.toString().padLeft(2, '0')}/'
+          '${cfDate!.day.toString().padLeft(2, '0')}/'
+          '${cfDate!.year}';
     }
+
 
     final response = await _api.storeCompany(
       context: context,
