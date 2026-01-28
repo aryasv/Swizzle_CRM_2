@@ -61,6 +61,26 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+
+    if (isEdit) {
+      _prefillFromList();
+    }
+  }
+
+  void _prefillFromList() {
+    final c = widget.company!;
+
+    companyName.text = c.name;
+    phone.text = c.phone;
+    email.text = c.email;
+    website.text = c.website;
+  }
+
+
+
   Future<void> _saveCompany() async {
 
     if (companyName.text.trim().isEmpty) {

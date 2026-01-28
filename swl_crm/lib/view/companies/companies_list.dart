@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_model.dart';
 
+import 'companies_form_page.dart';
+
 class CompaniesList extends StatelessWidget {
   final List<CompanyModel> companies;
   final bool isActiveTab;
@@ -106,6 +108,12 @@ class _CompanyCard extends StatelessWidget {
             child: const Icon(Icons.more_vert, size: 20),
             onSelected: (value) async {
               if (value == 'edit') {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CompaniesFormPage(company: company),
+                  ),
+                );
 
               }
 
