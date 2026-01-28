@@ -15,6 +15,7 @@ export 'package:swl_crm/view/bottom_nav/nav_wrapper.dart';
 
 
 //Folder > companies
+export 'package:swl_crm/view/companies/companies_form_page.dart';
 export 'package:swl_crm/view/companies/companies_list.dart';
 export 'package:swl_crm/view/companies/companies_page.dart';
 

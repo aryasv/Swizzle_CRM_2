@@ -26,7 +26,6 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
   bool addressExpanded = false;
   bool additionalExpanded = false;
 
-
   final TextEditingController companyName = TextEditingController();
   final TextEditingController phone = TextEditingController();
   final TextEditingController website = TextEditingController();
@@ -45,6 +44,16 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
   String? cfLookup;
 
   @override
+  void initState() {
+    super.initState();
+
+    if (isEdit) {
+      isLoadingDetails = true;
+      _loadCompanyDetails();
+    }
+  }
+
+  @override
   void dispose() {
     companyName.dispose();
     phone.dispose();
@@ -61,28 +70,75 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
+  Future<void> _loadCompanyDetails() async {
+    final response = await _api.editCompany(
+      context: context,
+      companyUuid: widget.company!.uuid,
+      companyId: widget.company!.id,
+      accountId: 1,
+    );
 
-    if (isEdit) {
-      _prefillFromList();
+    if (!mounted) return;
+
+    if (!response.result || response.response == null) {
+      isLoadingDetails = false;
+      setState(() {});
+      _showError('Failed to load company details');
+      return;
     }
+
+    final Map<String, dynamic> root =
+    response.response!.containsKey('data')
+        ? Map<String, dynamic>.from(response.response!['data'])
+        : Map<String, dynamic>.from(response.response!);
+
+
+    final company = root['company'];
+
+    companyName.text = company['name'] ?? '';
+    phone.text = company['phone'] ?? '';
+    email.text = company['email'] ?? '';
+    website.text = company['website'] ?? '';
+
+    street.text = company['address'] ?? '';
+    city.text = company['city'] ?? '';
+    state.text = company['state'] ?? '';
+    country.text = company['country'] ?? '';
+    zip.text = company['zip'] ?? '';
+    billingCode.text = company['billing_code'] ?? '';
+
+
+    final List fieldsGroups = root['fields'] ?? [];
+    final Map<String, dynamic> values = {};
+
+    for (final group in fieldsGroups) {
+      final List fields = group['fields'] ?? [];
+      for (final field in fields) {
+        values[field['name']] = field['current_value'];
+      }
+    }
+
+    cfText.text = values['custom_field_66']?.toString() ?? '';
+    cfPicklist.text = values['custom_field_68']?.toString() ?? '';
+    cfLookup = values['custom_field_69']?.toString();
+
+
+    if (values['custom_field_67'] != null &&
+        values['custom_field_67'].toString().contains('-')) {
+      final parts = values['custom_field_67'].toString().split('-');
+      cfDate = DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    }
+
+    isLoadingDetails = false;
+    setState(() {});
   }
-
-  void _prefillFromList() {
-    final c = widget.company!;
-
-    companyName.text = c.name;
-    phone.text = c.phone;
-    email.text = c.email;
-    website.text = c.website;
-  }
-
 
 
   Future<void> _saveCompany() async {
-
     if (companyName.text.trim().isEmpty) {
       _showError('Company name is required');
       return;
@@ -104,31 +160,6 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
       return;
     }
 
-    if (street.text.trim().isEmpty) {
-      _showError('Billing address is required');
-      return;
-    }
-
-    if (city.text.trim().isEmpty) {
-      _showError('City is required');
-      return;
-    }
-
-    if (country.text.trim().isEmpty) {
-      _showError('Country is required');
-      return;
-    }
-
-    if (cfPicklist.text.trim().isEmpty) {
-      _showError('CF - Picklist is required');
-      return;
-    }
-
-    if (cfLookup == null) {
-      _showError('CF - Lookup is required');
-      return;
-    }
-
     setState(() => isSaving = true);
 
     final Map<String, dynamic> payload = {
@@ -142,16 +173,13 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
       "country": country.text.trim(),
       "zip": zip.text.trim(),
       "billing_code": billingCode.text.trim(),
-
-      "custom_field_68": cfPicklist.text.trim(),
-      "custom_field_69": cfLookup!,
+      "custom_field_68": "2",
+      "custom_field_69": cfLookup ?? "",
     };
 
-    if (cfText.text.trim().isNotEmpty) {
+    if (cfText.text.isNotEmpty) {
       payload["custom_field_66"] = cfText.text.trim();
     }
-
-    payload["custom_field_68"] = "2";
 
     if (cfDate != null) {
       payload["custom_field_67"] =
@@ -160,11 +188,20 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
           '${cfDate!.year}';
     }
 
+    late ApiResponse response;
 
-    final response = await _api.storeCompany(
-      context: context,
-      companyData: payload,
-    );
+    if (isEdit) {
+      response = await _api.updateCompany(
+        context: context,
+        companyUuid: widget.company!.uuid,
+        companyData: payload,
+      );
+    } else {
+      response = await _api.storeCompany(
+        context: context,
+        companyData: payload,
+      );
+    }
 
     if (!mounted) return;
 
@@ -173,38 +210,23 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
     if (response.result) {
       Navigator.pop(context, true);
     } else {
-      _showError(
-        response.error.isNotEmpty
-            ? response.error
-            : 'Failed to create company',
-      );
+      _showError(response.error);
     }
   }
 
-
-
-
   void _showError(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: Colors.red,
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
       ),
     );
   }
 
-
-
-
-
+  //
   @override
   Widget build(BuildContext context) {
-
     if (isEdit && isLoadingDetails) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -219,13 +241,11 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
             title: isEdit ? 'Edit Company' : 'New Company',
             showBack: true,
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-
                   _accordion(
                     title: 'Company Information',
                     expanded: companyExpanded,
@@ -240,9 +260,7 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   _accordion(
                     title: 'Address Information',
                     expanded: addressExpanded,
@@ -250,53 +268,50 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
                         setState(() => addressExpanded = !addressExpanded),
                     child: Column(
                       children: [
-                        _field(
-                            'Billing Street',
-                            street,
-                            'Enter billing street',
-                            maxLines: 3
-                        ),
+                        _field('Billing Street', street, 'Enter billing street',
+                            maxLines: 3),
                         _field('Billing City', city, 'Enter billing city'),
                         _field('Billing State', state, 'Enter billing state'),
                         _field(
                             'Billing Country', country, 'Enter billing country'),
                         _field('Billing Zip', zip, 'Enter billing zip'),
-                        _field('Billing Code', billingCode,
-                            'Enter billing code'),
+                        _field('Billing Code', billingCode, 'Enter billing code'),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-
                   _accordion(
                     title: 'Additional Information',
                     expanded: additionalExpanded,
                     onTap: () =>
                         setState(() => additionalExpanded = !additionalExpanded),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _field('CF - Text', cfText, 'Enter cf - text'),
-
+                        Text('CF - Date',
+                            style:
+                            const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 6),
                         _dateField(),
-
                         _field(
-                            'CF - Picklist', cfPicklist, 'Enter cf - picklist'),
-
+                            'CF - Picklist',
+                            cfPicklist,
+                            'Enter cf - picklist'),
+                        Text('CF - Lookup',
+                            style:
+                            const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 6),
                         _lookupDropdown(),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 32),
                 ],
               ),
             ),
           ),
-          SizedBox(height: 16,),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: SizedBox(
               height: 48,
               width: double.infinity,
@@ -311,22 +326,18 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
                 child: Text(
                   isEdit ? 'Update Company' : 'Create Company',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                      color: Colors.white, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
           ),
-          SizedBox(height: 48,)
+          const SizedBox(height: 48),
         ],
       ),
-
-
     );
   }
 
-
+  //
   Widget _accordion({
     required String title,
     required bool expanded,
@@ -337,9 +348,7 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
-        ],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Column(
         children: [
@@ -349,23 +358,16 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.folder_open,
-                      color: Color(0xFF2A7DE1)),
+                  const Icon(Icons.folder_open, color: Color(0xFF2A7DE1)),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: Text(title,
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
-                  Icon(
-                    expanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                  ),
+                  Icon(expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down),
                 ],
               ),
             ),
@@ -381,38 +383,45 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
     );
   }
 
-  Widget _field(
-      String label,
-      TextEditingController controller,
-      String hint, {
-        int maxLines = 1,
-      }) {
+  Widget _field(String label, TextEditingController controller, String hint,
+      {int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+              label,
+              style:
+              const TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                  FontWeight.w500)
           ),
           const SizedBox(height: 6),
           TextField(
             controller: controller,
             maxLines: maxLines,
             cursorColor: const Color(0xFF2A7DE1),
+
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: const TextStyle(
+                color: Colors.black38,
+                fontSize: 14,
+              ),
+
               filled: true,
               fillColor: const Color(0xFFF9F9F9),
+
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide:
-                const BorderSide(color: Colors.black12, width: 1),
+                borderSide: const BorderSide(
+                  color: Colors.black12,
+                  width: 1,
+                ),
               ),
+
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(
@@ -420,10 +429,12 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
                   width: 1.5,
                 ),
               ),
+
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,
               ),
+
             ),
           ),
         ],
@@ -434,51 +445,40 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
   Widget _dateField() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'CF - Date',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+      child: InkWell(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: cfDate ?? DateTime.now(),
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+          );
+          if (picked != null) setState(() => cfDate = picked);
+        },
+        child: Container(
+          height: 48,
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9F9F9),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.black12),
           ),
-          const SizedBox(height: 6),
-          InkWell(
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                setState(() => cfDate = picked);
-              }
-            },
-            child: Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9F9F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                cfDate == null
+                    ? 'Select cf - date'
+                    : cfDate!.toIso8601String().split('T').first,
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+
+
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today,
-                      size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Text(
-                    cfDate == null
-                        ? 'Select cf - date'
-                        : cfDate!.toIso8601String().split('T').first,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -486,32 +486,22 @@ class _CompaniesFormPageState extends State<CompaniesFormPage> {
   Widget _lookupDropdown() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'CF - Lookup',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            value: cfLookup,
-            items: const [
-              DropdownMenuItem(value: '1', child: Text('Option 1')),
-              DropdownMenuItem(value: '2', child: Text('Option 2')),
-            ],
-            onChanged: (v) => setState(() => cfLookup = v),
-            decoration: InputDecoration(
-              hintText: 'Select cf - lookup',
-              filled: true,
-              fillColor: const Color(0xFFF9F9F9),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
+      child: DropdownButtonFormField<String>(
+        value: cfLookup,
+        items: const [
+          DropdownMenuItem(value: '1', child: Text('Option 1')),
+          DropdownMenuItem(value: '2', child: Text('Option 2')),
         ],
+        onChanged: (v) => setState(() => cfLookup = v),
+        decoration: InputDecoration(
+          hintText: 'Select cf - lookup',
+          filled: true,
+          fillColor: const Color(0xFFF9F9F9),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+        ),
       ),
     );
   }
