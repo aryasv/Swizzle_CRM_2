@@ -1,92 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/settings_model.dart';
 
-class NavSettings extends StatelessWidget {
+class NavSettings extends StatefulWidget {
   const NavSettings({super.key});
 
   @override
+  State<NavSettings> createState() => _NavSettingsState();
+}
+
+class _NavSettingsState extends State<NavSettings> {
+  final WebFunctions _api = WebFunctions();
+
+  bool isLoading = true;
+  SettingsUserModel? user;
+  List<SettingsItemModel> settings = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final response = await _api.callApiFunction(
+      context,
+      "settings",
+      {},
+    );
+
+    if (!mounted) return;
+
+    if (response.result && response.response != null) {
+      final data = response.response!['data'];
+
+      user = SettingsUserModel.fromJson(data['user']);
+
+      settings = (data['settings'] as List)
+          .map((e) => SettingsItemModel.fromJson(e))
+          .toList();
+    }
+
+    setState(() => isLoading = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          // Custom AppBar
-          const CustomAppBar(
-            title: 'Settings',
-          ),
-
-          // Profile section
+          const CustomAppBar(title: 'Settings'),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
+                BoxShadow(color: Colors.black12, blurRadius: 8),
               ],
             ),
             child: Column(
-              children: const [
+              children: [
                 CircleAvatar(
                   radius: 36,
-                  backgroundColor: Color(0xFFE8F1FD),
+                  backgroundColor: const Color(0xFFE8F1FD),
                   child: Text(
-                    'SJ',
-                    style: TextStyle(
+                    user!.name.isNotEmpty ? user!.name[0] : '',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF2A7DE1),
                     ),
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Text(
-                  'Sarah Johnson',
-                  style: TextStyle(
+                  user!.name,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'sarah.johnson@swlcrm.com',
-                  style: TextStyle(
+                  user!.email,
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Chip(
                   label: Text(
-                    'Sales Manager',
-                    style: TextStyle(
+                    user!.role,
+                    style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF2A7DE1),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  backgroundColor: Color(0xFFE8F1FD),
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  backgroundColor: const Color(0xFFE8F1FD),
                 ),
               ],
             ),
           ),
 
-          SizedBox(height: 16,),
+          const SizedBox(height: 16),
 
-
-          // Settings list
-          const Expanded(
+          Expanded(
             child: SingleChildScrollView(
-              child: SettingsList(),
+              padding: EdgeInsets.only(bottom: 48),
+              child: SettingsList(items: settings),
             ),
           ),
         ],
@@ -94,3 +132,4 @@ class NavSettings extends StatelessWidget {
     );
   }
 }
+
