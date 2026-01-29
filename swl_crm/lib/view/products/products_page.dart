@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/products_model.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -10,18 +11,57 @@ class ProductsPage extends StatefulWidget {
 
 class _ProductsPageState extends State<ProductsPage>
     with SingleTickerProviderStateMixin {
+  final WebFunctions _api = WebFunctions();
+
   late TabController _tabController;
+
+  bool isLoading = true;
+
+  List<ProductModel> activeProducts = [];
+  List<ProductModel> inactiveProducts = [];
+
+  int activeCount = 0;
+  int inactiveCount = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadProducts();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<void> _loadProducts() async {
+    setState(() => isLoading = true);
+
+    final activeRes = await _api.products(
+      context: context,
+      status: "active",
+    );
+
+    final inactiveRes = await _api.products(
+      context: context,
+      status: "inactive",
+    );
+
+    if (!mounted) return;
+
+    if (activeRes.result && inactiveRes.result) {
+      final activeData = activeRes.response!['data'];
+      final inactiveData = inactiveRes.response!['data'];
+
+      activeProducts = (activeData['products'] as List)
+          .map((e) => ProductModel.fromJson(e))
+          .toList();
+
+      inactiveProducts = (inactiveData['products'] as List)
+          .map((e) => ProductModel.fromJson(e))
+          .toList();
+
+      activeCount = activeData['active_count'] ?? 0;
+      inactiveCount = inactiveData['inactive_count'] ?? 0;
+    }
+
+    setState(() => isLoading = false);
   }
 
   @override
@@ -30,41 +70,48 @@ class _ProductsPageState extends State<ProductsPage>
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          // Custom AppBar with back
-          CustomAppBar(
+          const CustomAppBar(
             title: 'Products',
             showBack: true,
           ),
 
-          // Tabs
           CustomTabBar(
             controller: _tabController,
-            tabs: const [
-              CustomTabItem(label: 'Active', count: 2),
-              CustomTabItem(label: 'Inactive', count: 1),
+            tabs: [
+              CustomTabItem(label: 'Active', count: activeCount),
+              CustomTabItem(label: 'Inactive', count: inactiveCount),
             ],
           ),
 
-
-          // List
           Expanded(
-            child: TabBarView(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : TabBarView(
               controller: _tabController,
-              children: const [
-                ProductsList(isActive: true),
-                ProductsList(isActive: false),
+              children: [
+                ProductsList(products: activeProducts, isActive: true),
+                ProductsList(products: inactiveProducts, isActive: false),
               ],
             ),
           ),
         ],
       ),
 
-      // Floating button
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ProductsCreatePage(),
+            ),
+          ).then((v) {
+            if (v == true) _loadProducts();
+          });
+        },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 }
+
