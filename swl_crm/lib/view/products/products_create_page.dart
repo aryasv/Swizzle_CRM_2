@@ -1,20 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/products_model.dart';
 
 class ProductsCreatePage extends StatefulWidget {
-  const ProductsCreatePage({super.key});
+  final ProductModel? product;
+
+  const ProductsCreatePage({
+    super.key,
+    this.product,
+  });
 
   @override
   State<ProductsCreatePage> createState() => _ProductsCreatePageState();
 }
 
 class _ProductsCreatePageState extends State<ProductsCreatePage> {
-
+  final WebFunctions _api = WebFunctions();
+  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
 
   bool _isSaving = false;
+  bool get isEdit => widget.product != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEdit) {
+      _nameController.text = widget.product!.name;
+      _codeController.text = widget.product!.code;
+      _priceController.text = widget.product!.price.toString();
+    }
+  }
 
   @override
   void dispose() {
@@ -24,23 +43,64 @@ class _ProductsCreatePageState extends State<ProductsCreatePage> {
     super.dispose();
   }
 
-  void _saveProduct() {
+  Future<void> _saveProduct() async {
     final name = _nameController.text.trim();
     final code = _codeController.text.trim();
-    final price = _priceController.text.trim();
+    final priceStr = _priceController.text.trim();
 
-    if (name.isEmpty || code.isEmpty || price.isEmpty) {
+    if (name.isEmpty || code.isEmpty || priceStr.isEmpty) {
       _showError("Please fill all fields");
+      return;
+    }
+
+    final price = double.tryParse(priceStr);
+    if (price == null) {
+      _showError("Please enter a valid price");
       return;
     }
 
     setState(() => _isSaving = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accountId = prefs.getString('account_id') ?? "1";
+
+      late ApiResponse response;
+
+      if (isEdit) {
+        response = await _api.updateProduct(
+          context: context,
+          productUuid: widget.product!.uuid,
+          productName: name,
+          productCode: code,
+          productPrice: price,
+          productId: widget.product!.id.toString(),
+          accountId: accountId,
+        );
+      } else {
+        response = await _api.createProduct(
+          context: context,
+          productName: name,
+          productCode: code,
+          productPrice: price,
+          accountId: accountId,
+        );
+      }
+
       if (!mounted) return;
-      setState(() => _isSaving = false);
-      Navigator.pop(context);
-    });
+
+      if (response.result) {
+        Navigator.pop(context, true);
+      } else {
+        _showError(response.error);
+      }
+    } catch (e) {
+      _showError("An error occurred: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   void _showError(String message) {
@@ -60,8 +120,8 @@ class _ProductsCreatePageState extends State<ProductsCreatePage> {
       body: Column(
         children: [
           // AppBar
-          const CustomAppBar(
-            title: 'Add New Product',
+          CustomAppBar(
+            title: isEdit ? 'Edit Product' : 'Add New Product',
             showBack: true,
           ),
 
@@ -131,7 +191,7 @@ class _ProductsCreatePageState extends State<ProductsCreatePage> {
                     keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                     decoration: _inputDecoration(
-                      label: '₹ 0.00',
+                      label: '0.00',
                     ),
                   ),
 
@@ -143,15 +203,15 @@ class _ProductsCreatePageState extends State<ProductsCreatePage> {
                     height: 52,
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _saveProduct,
-                      icon: Icon(Icons.check, color: Colors.white,),
+                      icon: const Icon(Icons.check, color: Colors.white,),
                       label: _isSaving
                           ? const CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.white,
                       )
                           : Text(
-                        'Save Product',
-                        style: TextStyle(
+                        isEdit ? 'Update Product' : 'Save Product',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,

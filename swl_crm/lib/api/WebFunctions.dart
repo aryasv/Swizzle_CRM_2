@@ -840,6 +840,7 @@ class WebFunctions {
       "product_code": productCode,
       "product_price": productPrice,
       "account_id": accountId,
+      "status": "active",
     };
 
     // Debug: Verify token is available
@@ -913,28 +914,21 @@ class WebFunctions {
     required String productUuid,
     required String productId,
     required String accountId,
+    String action = "deactivate",
   }) async {
     final Map<String, dynamic> datadict = {
       "account_id": int.tryParse(accountId) ?? 1,
       "product_id": int.tryParse(productId) ?? 0,
+      "action": action,
     };
 
-    // Debug: Verify token is available
     final token = await accessToken();
-    print(
-        "🔑 Delete Product API - Token from SharedPreferences: ${token.isNotEmpty ? '${token.substring(0, 10)}...' : 'EMPTY'}");
-
     if (token.isEmpty) {
-      print(
-          "❌ Delete Product API - No access token found! User may not be logged in.");
       return ApiResponse(
         result: false,
         error: "Authentication required. Please log in again.",
       );
     }
-
-    print(
-        "✅ Delete Product API - Deleting product UUID: $productUuid (ID: $productId, Account: $accountId)");
 
     return await callApiFunction(
       context,
@@ -942,6 +936,7 @@ class WebFunctions {
       datadict,
     );
   }
+
 
   Future<ApiResponse> contacts({
     required BuildContext context,

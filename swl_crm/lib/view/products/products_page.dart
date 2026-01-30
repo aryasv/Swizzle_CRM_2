@@ -51,14 +51,16 @@ class _ProductsPageState extends State<ProductsPage>
 
       activeProducts = (activeData['products'] as List)
           .map((e) => ProductModel.fromJson(e))
-          .toList();
+          .toList()
+          ..sort((a, b) => b.id.compareTo(a.id));
 
       inactiveProducts = (inactiveData['products'] as List)
           .map((e) => ProductModel.fromJson(e))
-          .toList();
+          .toList()
+          ..sort((a, b) => b.id.compareTo(a.id));
 
-      activeCount = activeData['active_count'] ?? 0;
-      inactiveCount = inactiveData['inactive_count'] ?? 0;
+      activeCount = activeData['active_count'] ?? activeProducts.length;
+      inactiveCount = inactiveData['inactive_count'] ?? inactiveProducts.length;
     }
 
     setState(() => isLoading = false);
@@ -89,8 +91,16 @@ class _ProductsPageState extends State<ProductsPage>
                 : TabBarView(
               controller: _tabController,
               children: [
-                ProductsList(products: activeProducts, isActive: true),
-                ProductsList(products: inactiveProducts, isActive: false),
+                ProductsList(
+                  products: activeProducts,
+                  isActive: true,
+                  onRefresh: _loadProducts,
+                ),
+                ProductsList(
+                  products: inactiveProducts,
+                  isActive: false,
+                  onRefresh: _loadProducts,
+                ),
               ],
             ),
           ),

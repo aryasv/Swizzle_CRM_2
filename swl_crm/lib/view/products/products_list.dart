@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/products_model.dart';
+import 'products_create_page.dart';
 
-class ProductsList extends StatefulWidget {
+class ProductsList extends StatelessWidget {
   final List<ProductModel> products;
   final bool isActive;
+  final VoidCallback onRefresh;
 
   const ProductsList({
     super.key,
     required this.products,
     required this.isActive,
+    required this.onRefresh,
   });
 
   @override
-  State<ProductsList> createState() => _ProductsListState();
-}
-
-class _ProductsListState extends State<ProductsList> {
-  @override
   Widget build(BuildContext context) {
-    if (widget.products.isEmpty) {
+    if (products.isEmpty) {
       return const Center(
         child: Text(
           'No products found',
@@ -30,11 +28,12 @@ class _ProductsListState extends State<ProductsList> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: widget.products.length,
+      itemCount: products.length,
       itemBuilder: (context, index) {
         return _ProductCard(
-          product: widget.products[index],
-          isActive: widget.isActive,
+          product: products[index],
+          isActive: isActive,
+          onRefresh: onRefresh,
         );
       },
     );
@@ -44,14 +43,18 @@ class _ProductsListState extends State<ProductsList> {
 class _ProductCard extends StatelessWidget {
   final ProductModel product;
   final bool isActive;
+  final VoidCallback onRefresh;
 
   const _ProductCard({
     required this.product,
     required this.isActive,
+    required this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
+    final api = WebFunctions();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
@@ -112,20 +115,92 @@ class _ProductCard extends StatelessWidget {
           ),
 
           PopupMenuButton<String>(
-            onSelected: (value) {
-              debugPrint('$value clicked for ${product.name}');
+            padding: EdgeInsets.zero,
+            child: const Icon(Icons.more_vert, size: 20),
+            onSelected: (value) async {
+              if (value == 'edit') {
+                 final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductsCreatePage(product: product),
+                  ),
+                );
+                if (result == true) {
+                  onRefresh();
+                }
+              }
+
+              if (value == 'deactivate') {
+                await api.deleteProduct(
+                  context: context,
+                  productUuid: product.uuid,
+                  productId: product.id.toString(),
+                  accountId: "1",
+                  action: "deactivate",
+                );
+                onRefresh();
+              }
+
+              if (value == 'activate') {
+                await api.deleteProduct(
+                  context: context,
+                  productUuid: product.uuid,
+                  productId: product.id.toString(),
+                  accountId: "1",
+                  action: "activate",
+                );
+                onRefresh();
+              }
             },
-            itemBuilder: (context) => [
-              if (isActive)
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
-              PopupMenuItem(
-                value: isActive ? 'deactivate' : 'activate',
-                child: Text(isActive ? 'Deactivate' : 'Activate'),
-              ),
-            ],
+            itemBuilder: (context) {
+              if (isActive) {
+                return const [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 18, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'deactivate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, size: 18, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text('Deactivate'),
+                      ],
+                    ),
+                  ),
+                ];
+              } else {
+                return const [
+                   PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 18, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'activate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 18, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text('Activate'),
+                      ],
+                    ),
+                  ),
+                ];
+              }
+            },
           ),
         ],
       ),
