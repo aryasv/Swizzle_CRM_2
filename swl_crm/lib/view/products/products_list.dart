@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/products_model.dart';
 import 'products_create_page.dart';
@@ -114,94 +115,73 @@ class _ProductCard extends StatelessWidget {
             ),
           ),
 
-          PopupMenuButton<String>(
-            padding: EdgeInsets.zero,
-            child: const Icon(Icons.more_vert, size: 20),
-            onSelected: (value) async {
-              if (value == 'edit') {
-                 final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ProductsCreatePage(product: product),
-                  ),
-                );
-                if (result == true) {
-                  onRefresh();
-                }
-              }
-
-              if (value == 'deactivate') {
-                await api.deleteProduct(
-                  context: context,
-                  productUuid: product.uuid,
-                  productId: product.id.toString(),
-                  accountId: "1",
-                  action: "deactivate",
-                );
-                onRefresh();
-              }
-
-              if (value == 'activate') {
-                await api.deleteProduct(
-                  context: context,
-                  productUuid: product.uuid,
-                  productId: product.id.toString(),
-                  accountId: "1",
-                  action: "activate",
-                );
-                onRefresh();
-              }
-            },
-            itemBuilder: (context) {
-              if (isActive) {
-                return const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
+          if (isActive)
+            Transform.translate(
+              offset: const Offset(-2, -26), // X (left/right), Y (up/down)
+              child: PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                child: const Icon(Icons.more_vert, size: 20),
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                     final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProductsCreatePage(product: product),
+                      ),
+                    );
+                    if (result == true) {
+                      onRefresh();
+                    }
+                  }
+              
+                  if (value == 'deactivate') {
+                    // Fetch account_id dynamically
+                    final prefs = await SharedPreferences.getInstance();
+                    final accountId = prefs.getString('account_id') ?? "1";
+                    
+                    final response = await api.deleteProduct(
+                      context: context,
+                      productUuid: product.uuid,
+                      productId: product.id.toString(),
+                      accountId: accountId,
+                      action: "deactivate",
+                    );
+                    if (context.mounted) {
+                       if (response.result) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product Deactivated', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+                          onRefresh();
+                       } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.error, style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red));
+                       }
+                    }
+                  }
+                },
+                itemBuilder: (context) {
+                  return const [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18, color: Colors.green),
+                          SizedBox(width: 10),
+                          Text('Edit'),
+                        ],
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'deactivate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.block, size: 18, color: Colors.red),
-                        SizedBox(width: 10),
-                        Text('Deactivate'),
-                      ],
+                    PopupMenuItem(
+                      value: 'deactivate',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, size: 18, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Deactivate'),
+                        ],
+                      ),
                     ),
-                  ),
-                ];
-              } else {
-                return const [
-                   PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'activate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Activate'),
-                      ],
-                    ),
-                  ),
-                ];
-              }
-            },
-          ),
+                  ];
+                },
+              ),
+            ),
         ],
       ),
     );

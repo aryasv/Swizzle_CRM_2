@@ -49,6 +49,13 @@ class _ProductsPageState extends State<ProductsPage>
       final activeData = activeRes.response!['data'];
       final inactiveData = inactiveRes.response!['data'];
 
+      if ((activeData['products'] as List).isNotEmpty) {
+        print("DEBUG: First Active Product JSON: ${(activeData['products'] as List).first}");
+      }
+      if ((inactiveData['products'] as List).isNotEmpty) {
+        print("DEBUG: First Inactive Product JSON: ${(inactiveData['products'] as List).first}");
+      }
+
       activeProducts = (activeData['products'] as List)
           .map((e) => ProductModel.fromJson(e))
           .toList()
