@@ -24,38 +24,20 @@ class TasksList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: tasks.length,
       itemBuilder: (context, index) {
-        final task = tasks[index];
-        return TaskCard(
-          title: task.title,
-          description: task.isCompleted ? 'Completed' : 'Pending',
-          date: task.dueDate,
-          priority: task.priorityLabel,
-          assignedTo: task.assignedTo,
-        );
+        return _TaskCard(task: tasks[index]);
       },
     );
   }
 }
 
-class TaskCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final String date;
-  final String priority;
-  final String assignedTo;
+class _TaskCard extends StatelessWidget {
+  final TaskModel task;
 
-  const TaskCard({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.date,
-    required this.priority,
-    required this.assignedTo,
-  });
+  const _TaskCard({required this.task});
 
   @override
   Widget build(BuildContext context) {
-    final bool isUrgent = priority == 'URGENT';
+    final bool isCompleted = task.isCompleted;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -70,12 +52,12 @@ class TaskCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title and menu
+          // Title And menu
           Row(
             children: [
               Expanded(
                 child: Text(
-                  title,
+                  task.title,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -84,71 +66,77 @@ class TaskCard extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
-                child: const Icon(Icons.more_vert, size: 24),
+                child: const Icon(Icons.more_vert, size: 22),
                 itemBuilder: (context) => const [
                   PopupMenuItem(
                     value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
-                    ),
+                    child: Text('Edit'),
                   ),
                   PopupMenuItem(
                     value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 18, color: Colors.red),
-                        SizedBox(width: 10),
-                        Text('Delete'),
-                      ],
-                    ),
+                    child: Text('Delete'),
                   ),
                 ],
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+
+
+          const SizedBox(height: 10),
           const Divider(height: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
+          if (task.relatedTo.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.link, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    task.relatedTo,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
 
-          const SizedBox(height: 12),
+          ],
 
+          const SizedBox(height: 8),
+          // Due date And status
           Row(
             children: [
               const Icon(Icons.access_time, size: 14, color: Colors.grey),
               const SizedBox(width: 6),
               Text(
-                date,
+                task.dueDate,
                 style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(width: 10),
-              _PriorityChip(label: priority, isUrgent: isUrgent),
+              _StatusChip(isCompleted: isCompleted),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           const Text(
             'Assigned To',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
-            assignedTo,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            task.assignedTo,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -156,29 +144,27 @@ class TaskCard extends StatelessWidget {
   }
 }
 
-class _PriorityChip extends StatelessWidget {
-  final String label;
-  final bool isUrgent;
+class _StatusChip extends StatelessWidget {
+  final bool isCompleted;
 
-  const _PriorityChip({
-    required this.label,
-    required this.isUrgent,
-  });
+  const _StatusChip({required this.isCompleted});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isUrgent ? const Color(0xFFFFEAEA) : const Color(0xFFE0E0E0),
+        color: isCompleted
+            ? const Color(0xFFE7F4EA)
+            : const Color(0xFFF0F0F0),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        label,
+        isCompleted ? 'COMPLETED' : 'PENDING',
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: isUrgent ? Colors.red : Colors.black,
+          color: isCompleted ? Colors.green : Colors.grey,
         ),
       ),
     );

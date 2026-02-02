@@ -9,32 +9,57 @@ class NavTasks extends StatefulWidget {
   State<NavTasks> createState() => _NavTasksState();
 }
 
-class _NavTasksState extends State<NavTasks> {
-
+class _NavTasksState extends State<NavTasks>
+    with SingleTickerProviderStateMixin {
   final WebFunctions _api = WebFunctions();
+
+  late TabController _tabController;
+
   bool isLoading = true;
-  List<TaskModel> tasks = [];
+  List<TaskModel> activeTasks = [];
+  List<TaskModel> inactiveTasks = [];
+
+  int activeCount = 0;
+  int inactiveCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadTasks();
   }
 
   Future<void> _loadTasks() async {
     setState(() => isLoading = true);
 
-    final response = await _api.tasks(
+    final activeRes = await _api.tasks(
       context: context,
-      status: "active",
+      status: 'active',
+      page: 1,
+    );
+
+    final inactiveRes = await _api.tasks(
+      context: context,
+      status: 'inactive',
       page: 1,
     );
 
     if (!mounted) return;
 
-    if (response.result) {
-      final List list = response.response!['data']['tasks'] ?? [];
-      tasks = list.map((e) => TaskModel.fromJson(e)).toList();
+    if (activeRes.result) {
+      final data = activeRes.response!['data'];
+      activeTasks = (data['tasks'] as List)
+          .map((e) => TaskModel.fromJson(e))
+          .toList();
+      activeCount = data['active_count'] ?? 0;
+    }
+
+    if (inactiveRes.result) {
+      final data = inactiveRes.response!['data'];
+      inactiveTasks = (data['tasks'] as List)
+          .map((e) => TaskModel.fromJson(e))
+          .toList();
+      inactiveCount = data['inactive_count'] ?? 0;
     }
 
     setState(() => isLoading = false);
@@ -46,20 +71,31 @@ class _NavTasksState extends State<NavTasks> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          CustomAppBar(
-            title: 'Tasks',
+          const CustomAppBar(title: 'Tasks'),
+
+          CustomTabBar(
+            controller: _tabController,
+            tabs: [
+              CustomTabItem(label: 'Active', count: activeCount),
+              CustomTabItem(label: 'Inactive', count: inactiveCount),
+            ],
           ),
-
-
 
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : TasksList(tasks: tasks),
+                : TabBarView(
+              controller: _tabController,
+              children: [
+                TasksList(tasks: activeTasks),
+                TasksList(tasks: inactiveTasks),
+              ],
+            ),
           ),
           SizedBox(height: 48,)
         ],
       ),
+
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
         onPressed: () {},

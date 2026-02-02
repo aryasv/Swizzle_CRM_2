@@ -3,18 +3,20 @@ class TaskModel {
   final String uuid;
   final String title;
   final String dueDate;
-  final bool isHighPriority;
+  final String status;
+  final String relatedTo;
   final String assignedTo;
-  final bool isCompleted;
+  final bool isDeleted;
 
   TaskModel({
     required this.id,
     required this.uuid,
     required this.title,
     required this.dueDate,
-    required this.isHighPriority,
+    required this.status,
+    required this.relatedTo,
     required this.assignedTo,
-    required this.isCompleted,
+    required this.isDeleted,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -23,11 +25,20 @@ class TaskModel {
       uuid: json['uuid'],
       title: json['name'] ?? '',
       dueDate: json['due_date'] ?? '',
-      isHighPriority: json['is_high_priority'] == 1,
-      assignedTo: json['assigned_to'] ?? '',
-      isCompleted: json['is_completed'] == 1,
+      status: json['status'] ?? 'pending',
+      relatedTo: (json['related_to_display'] == null ||
+          json['related_to_display'] == '-' ||
+          json['related_to_display'].toString().isEmpty)
+          ? ''
+          : json['related_to_display'],
+      assignedTo: (json['assigned_to'] == null ||
+          json['assigned_to'] == '-' ||
+          json['assigned_to'].toString().isEmpty)
+          ? 'Unassigned'
+          : json['assigned_to'],
+      isDeleted: json['is_deleted'] == true,
     );
   }
 
-  String get priorityLabel => isHighPriority ? 'URGENT' : 'NORMAL';
+  bool get isCompleted => status == 'completed';
 }
