@@ -11,13 +11,14 @@ class TasksFormPage extends StatefulWidget {
 class _TasksFormPageState extends State<TasksFormPage> {
   final TextEditingController _taskName = TextEditingController();
   final TextEditingController _description = TextEditingController();
+  final TextEditingController _assignee = TextEditingController();
+
 
   DateTime? _dueDate;
   bool _repeat = false;
   bool _reminder = false;
   bool _highPriority = false;
 
-  String? _assignee;
   String? _relatedTo;
 
   final List<String> _assignees = ['Sarah Johnson', 'Anish Joseph', 'Kiran Karma'];
@@ -27,6 +28,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
   void dispose() {
     _taskName.dispose();
     _description.dispose();
+    _assignee.dispose();
     super.dispose();
   }
 
@@ -49,10 +51,11 @@ class _TasksFormPageState extends State<TasksFormPage> {
       return;
     }
 
-    if (_assignee == null) {
+    if (_assignee.text.trim().isEmpty) {
       _showError('Assignee is required');
       return;
     }
+
 
 
 
@@ -94,12 +97,11 @@ class _TasksFormPageState extends State<TasksFormPage> {
                     controller: _taskName,
                   ),
 
-                  _dropdown(
+                  _field(
                     hint: 'Assignee *',
-                    value: _assignee,
-                    items: _assignees,
-                    onChanged: (v) => setState(() => _assignee = v),
+                    controller: _assignee,
                   ),
+
 
                   _dateField(),
 
@@ -281,16 +283,26 @@ class _TasksFormPageState extends State<TasksFormPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Checkbox(
-            value: value,
-            onChanged: (v) => onChanged(v ?? false),
+          Transform.translate(
+            offset: const Offset(-8, 0),
+            child: Checkbox(
+              value: value,
+              onChanged: (v) => onChanged(v ?? false),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              
+            ),
           ),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14),
+          Transform.translate(
+            offset: const Offset(-6, 0),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14),
+            ),
           ),
         ],
       ),
     );
   }
+
+
 }
