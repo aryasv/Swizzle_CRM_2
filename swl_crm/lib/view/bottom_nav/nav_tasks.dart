@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/tasks_model.dart';
 
 class NavTasks extends StatefulWidget {
   const NavTasks({super.key});
@@ -8,17 +9,36 @@ class NavTasks extends StatefulWidget {
   State<NavTasks> createState() => _NavTasksState();
 }
 
-class _NavTasksState extends State<NavTasks> with SingleTickerProviderStateMixin {
-  String _selectedFilter = 'All Tasks';
-  bool _showSearch = false;
+class _NavTasksState extends State<NavTasks> {
 
-  final List<String> _filters = [
-    'All Tasks',
-    'High Priority',
-    'Medium Priority',
-    'Low Priority',
-  ];
+  final WebFunctions _api = WebFunctions();
+  bool isLoading = true;
+  List<TaskModel> tasks = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    setState(() => isLoading = true);
+
+    final response = await _api.tasks(
+      context: context,
+      status: "active",
+      page: 1,
+    );
+
+    if (!mounted) return;
+
+    if (response.result) {
+      final List list = response.response!['data']['tasks'] ?? [];
+      tasks = list.map((e) => TaskModel.fromJson(e)).toList();
+    }
+
+    setState(() => isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,153 +46,20 @@ class _NavTasksState extends State<NavTasks> with SingleTickerProviderStateMixin
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          // Custom App Bar
           CustomAppBar(
             title: 'Tasks',
-            rightAction1: Icon(
-              _showSearch ? Icons.close : Icons.search,
-              size: 20,
-            ),
-            onRightAction1: () {
-              setState(() {
-                _showSearch = !_showSearch;
-              });
-            },
-            rightAction2: const Icon(Icons.refresh, size: 20),
-            onRightAction2: () {
-              setState(() {
-                _showSearch = false;
-              });
-            },
           ),
 
 
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: _showSearch
-                ? Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: TextField(
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Search tasks...',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                  const EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onChanged: (value) {
-                  // later: filter API list
-                },
-              ),
-            )
-                : const SizedBox.shrink(),
+
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : TasksList(tasks: tasks),
           ),
-
-
-          // Filter dropdown
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: DropdownButtonFormField<String>(
-              value: _selectedFilter,
-              items: _filters
-                  .map(
-                    (item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(
-                    item,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
-              )
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedFilter = value!;
-                });
-              },
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.black12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.black12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF2A7DE1),
-                  ),
-                ),
-              ),
-              icon: const Icon(Icons.keyboard_arrow_down),
-            ),
-
-          ),
-
-          const SizedBox(height: 12),
-
-          // Overdue
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 3,
-                  height: 16,
-                  color: Colors.red,
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Overdue',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    '20',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.red,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-
-          // Tasks list
-          const Expanded(
-            child: TasksList(),
-          ),
+          SizedBox(height: 48,)
         ],
       ),
-
-      // Floating button
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
         onPressed: () {},
