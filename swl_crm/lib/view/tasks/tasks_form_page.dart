@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
 class TasksFormPage extends StatefulWidget {
-  const TasksFormPage({super.key});
+  final String? taskUuid;
+  final int? taskId;
+
+  const TasksFormPage({super.key, this.taskUuid, this.taskId});
 
   @override
   State<TasksFormPage> createState() => _TasksFormPageState();
@@ -28,6 +31,66 @@ class _TasksFormPageState extends State<TasksFormPage> {
   bool isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.taskUuid != null) {
+      _loadTaskDetails();
+    }
+  }
+
+  Future<void> _loadTaskDetails() async {
+    setState(() => isLoading = true);
+    final res = await _api.editTask(
+      context: context,
+      taskUuid: widget.taskUuid!,
+      taskId: widget.taskId ?? 0, 
+    );
+
+    if (res.result) {
+      final data = res.response!['data'];
+      final taskData = data['task'];
+      
+      if (taskData != null) {
+        _taskName.text = taskData['name'] ?? '';
+        _description.text = taskData['description'] ?? '';
+
+        if (taskData['assigned_user_id'] == 1) _assignee.text = "Sarah Johnson";
+        else if (taskData['assigned_user_id'] == 2) _assignee.text = "Anish Joseph";
+        else if (taskData['assigned_user_id'] == 3) _assignee.text = "Kiran Karma";
+        else _assignee.text = "Sarah Johnson"; // Fallback
+        
+        if (taskData['due_date'] != null) {
+          try {
+            List<String> parts = taskData['due_date'].toString().split('/');
+            if (parts.length == 3) {
+              _dueDate = DateTime(
+                int.parse(parts[2]), // YYYY
+                int.parse(parts[1]), // MM
+                int.parse(parts[0]), // DD
+              );
+            } else {
+               _dueDate = DateTime.tryParse(taskData['due_date']);
+            }
+          } catch (e) {
+            print("Error parsing date: $e");
+          }
+        }
+        
+        _repeat = taskData['recurring'] == 1 || taskData['recurring'] == true;
+        _reminder = taskData['has_reminder'] == 1 || taskData['has_reminder'] == true;
+        _highPriority = taskData['is_high_priority'] == 1 || taskData['is_high_priority'] == true;
+        
+        // Map related module
+        if (taskData['related_to_module_id'] == 1) _relatedTo = 'Contacts';
+        else if (taskData['related_to_module_id'] == 2) _relatedTo = 'Companies';
+      }
+    } else {
+      _showError(res.error ?? 'Failed to load task details');
+    }
+    setState(() => isLoading = false);
+  }
+
+  @override
   void dispose() {
     _taskName.dispose();
     _description.dispose();
@@ -48,7 +111,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
     }
   }
 
-  Future<void> _createTask() async {
+  Future<void> _saveTask() async {
     if (_taskName.text.trim().isEmpty) {
       _showError('Task Name is required');
       return;
@@ -71,29 +134,50 @@ class _TasksFormPageState extends State<TasksFormPage> {
     if (_relatedTo == 'Contacts') moduleRelatedId = 1;
     if (_relatedTo == 'Companies') moduleRelatedId = 2;
 
-    final res = await _api.storeTask(
-      context: context,
-      name: _taskName.text.trim(),
-      description: _description.text.trim(),
-      assignedUserId: assignedId,
-      dueDate: _dueDate?.toIso8601String().split('T').first,
-      recurring: _repeat ? 1 : 0,
-      hasReminder: _reminder ? 1 : 0,
-      reminderOnId: _reminder ? 1 : null, 
-      reminderAt: _reminder ? "10:00" : null,
-      isHighPriority: _highPriority ? 1 : 0,
-      relatedToModuleId: moduleRelatedId,
-      // Default/Mock values for demo
-      repeatsEvery: _repeat ? "Every Week" : null,
-      repeatUntil: _repeat ? DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first : null,
-    );
+    ApiResponse res;
+    if (widget.taskUuid != null) {
+      // Update
+      res = await _api.updateTask(
+        context: context,
+        taskUuid: widget.taskUuid!,
+        name: _taskName.text.trim(),
+        description: _description.text.trim(),
+        assignedUserId: assignedId,
+        dueDate: _dueDate?.toIso8601String().split('T').first,
+        recurring: _repeat ? 1 : 0,
+        hasReminder: _reminder ? 1 : 0,
+        reminderOnId: _reminder ? 1 : null,
+        reminderAt: _reminder ? "10:00" : null,
+        isHighPriority: _highPriority ? 1 : 0,
+        relatedToModuleId: moduleRelatedId,
+        repeatsEvery: _repeat ? "Every Week" : null,
+        repeatUntil: _repeat ? DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first : null,
+      );
+    } else {
+      // Create
+      res = await _api.storeTask(
+        context: context,
+        name: _taskName.text.trim(),
+        description: _description.text.trim(),
+        assignedUserId: assignedId,
+        dueDate: _dueDate?.toIso8601String().split('T').first,
+        recurring: _repeat ? 1 : 0,
+        hasReminder: _reminder ? 1 : 0,
+        reminderOnId: _reminder ? 1 : null,
+        reminderAt: _reminder ? "10:00" : null,
+        isHighPriority: _highPriority ? 1 : 0,
+        relatedToModuleId: moduleRelatedId,
+        repeatsEvery: _repeat ? "Every Week" : null,
+        repeatUntil: _repeat ? DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first : null,
+      );
+    }
 
     setState(() => isLoading = false);
 
     if (res.result) {
       if (mounted) Navigator.pop(context, true);
     } else {
-      _showError(res.error ?? 'Failed to create task');
+      _showError(res.error ?? 'Failed to save task');
     }
   }
 
@@ -112,8 +196,8 @@ class _TasksFormPageState extends State<TasksFormPage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          const CustomAppBar(
-            title: 'Create Task',
+          CustomAppBar(
+            title: widget.taskUuid != null ? 'Edit Task' : 'Create Task',
             showBack: true,
           ),
 
@@ -177,16 +261,18 @@ class _TasksFormPageState extends State<TasksFormPage> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: isLoading ? null : _createTask,
+                      onPressed: isLoading ? null : _saveTask,
                       icon: isLoading
                           ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.add, color: Colors.white),
+                          : Icon(widget.taskUuid != null ? Icons.edit : Icons.add, color: Colors.white),
                       label: Text(
-                        isLoading ? 'Creating...' : 'Create Task',
+                        isLoading 
+                            ? (widget.taskUuid != null ? 'Updating...' : 'Creating...') 
+                            : (widget.taskUuid != null ? 'Update Task' : 'Create Task'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/models/tasks_model.dart';
+import 'package:swl_crm/view/tasks/tasks_form_page.dart';
 
 class TasksList extends StatelessWidget {
   final List<TaskModel> tasks;
@@ -66,6 +67,19 @@ class _TaskCard extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TasksFormPage(
+                          taskUuid: task.uuid,
+                          taskId: task.id,
+                        ),
+                      ),
+                    );
+                  }
+                },
                 child: const Icon(Icons.more_vert, size: 22),
                 itemBuilder: (context) => const [
                   PopupMenuItem(
