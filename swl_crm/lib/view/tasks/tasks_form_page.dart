@@ -79,12 +79,13 @@ class _TasksFormPageState extends State<TasksFormPage> {
       dueDate: _dueDate?.toIso8601String().split('T').first,
       recurring: _repeat ? 1 : 0,
       hasReminder: _reminder ? 1 : 0,
+      reminderOnId: _reminder ? 1 : null, 
+      reminderAt: _reminder ? "10:00" : null,
       isHighPriority: _highPriority ? 1 : 0,
       relatedToModuleId: moduleRelatedId,
       // Default/Mock values for demo
       repeatsEvery: _repeat ? "Every Week" : null,
       repeatUntil: _repeat ? DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first : null,
-      reminderAt: _reminder ? "10:00" : null,
     );
 
     setState(() => isLoading = false);
