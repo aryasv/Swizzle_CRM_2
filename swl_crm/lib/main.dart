@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      // home: const SplashScreen(),
+       home: const SplashScreen(),
      // home: const LoginPage(),
       // home: const NavWrapper(),
       //home: const ProductsPage(),
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
       //home: const ProductsPage(),
       //home: const ProductsCreatePage(),
 
-        home: const NavTasks(),
+       // home: const NavTasks(),
       //home: const TasksFormPage(),
 
     );
