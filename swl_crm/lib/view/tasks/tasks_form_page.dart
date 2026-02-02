@@ -24,6 +24,9 @@ class _TasksFormPageState extends State<TasksFormPage> {
   final List<String> _assignees = ['Sarah Johnson', 'Anish Joseph', 'Kiran Karma'];
   final List<String> _relatedOptions = ['None', 'Contacts', 'Companies'];
 
+  final WebFunctions _api = WebFunctions();
+  bool isLoading = false;
+
   @override
   void dispose() {
     _taskName.dispose();
@@ -45,7 +48,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
     }
   }
 
-  void _createTask() {
+  Future<void> _createTask() async {
     if (_taskName.text.trim().isEmpty) {
       _showError('Task Name is required');
       return;
@@ -56,10 +59,41 @@ class _TasksFormPageState extends State<TasksFormPage> {
       return;
     }
 
+    setState(() => isLoading = true);
 
+    // Map assignee name to ID (Mock logic)
+    int assignedId = 1;
+    if (_assignee.text.contains("Anish")) assignedId = 2;
+    if (_assignee.text.contains("Kiran")) assignedId = 3;
 
+    // Map related module
+    int? moduleRelatedId;
+    if (_relatedTo == 'Contacts') moduleRelatedId = 1;
+    if (_relatedTo == 'Companies') moduleRelatedId = 2;
 
-    Navigator.pop(context, true);
+    final res = await _api.storeTask(
+      context: context,
+      name: _taskName.text.trim(),
+      description: _description.text.trim(),
+      assignedUserId: assignedId,
+      dueDate: _dueDate?.toIso8601String().split('T').first,
+      recurring: _repeat ? 1 : 0,
+      hasReminder: _reminder ? 1 : 0,
+      isHighPriority: _highPriority ? 1 : 0,
+      relatedToModuleId: moduleRelatedId,
+      // Default/Mock values for demo
+      repeatsEvery: _repeat ? "Every Week" : null,
+      repeatUntil: _repeat ? DateTime.now().add(const Duration(days: 30)).toIso8601String().split('T').first : null,
+      reminderAt: _reminder ? "10:00" : null,
+    );
+
+    setState(() => isLoading = false);
+
+    if (res.result) {
+      if (mounted) Navigator.pop(context, true);
+    } else {
+      _showError(res.error ?? 'Failed to create task');
+    }
   }
 
   void _showError(String msg) {
@@ -142,11 +176,17 @@ class _TasksFormPageState extends State<TasksFormPage> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: _createTask,
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text(
-                        'Create Task',
-                        style: TextStyle(
+                      onPressed: isLoading ? null : _createTask,
+                      icon: isLoading
+                          ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.add, color: Colors.white),
+                      label: Text(
+                        isLoading ? 'Creating...' : 'Create Task',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 16
@@ -289,7 +329,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
               value: value,
               onChanged: (v) => onChanged(v ?? false),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              
+
             ),
           ),
           Transform.translate(

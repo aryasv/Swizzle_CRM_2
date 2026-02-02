@@ -56,6 +56,7 @@ export 'package:swl_crm/view/settings/settings_list.dart';
 
 //Folder > tasks
 export 'package:swl_crm/view/tasks/tasks_list.dart';
+export 'package:swl_crm/view/tasks/tasks_form_page.dart';
 
 //Splash
 export 'package:swl_crm/view/forgot_password_page.dart';

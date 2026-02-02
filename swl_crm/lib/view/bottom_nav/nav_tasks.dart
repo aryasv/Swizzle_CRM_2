@@ -98,7 +98,18 @@ class _NavTasksState extends State<NavTasks>
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
-        onPressed: () {},
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TasksFormPage(),
+            ),
+          );
+
+          if (result == true) {
+            _loadTasks();
+          }
+        },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

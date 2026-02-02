@@ -1396,6 +1396,64 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> storeTask({
+    required BuildContext context,
+    required String name,
+    int? assignedUserId,
+    String? dueDate,
+    int recurring = 0,
+    String? repeatsEvery,
+    String? repeatUntil,
+    int hasReminder = 0,
+    int? reminderOnId,
+    String? reminderAt,
+    int? relatedToModuleId,
+    int? relatedToRecordId,
+    String? description,
+    int isHighPriority = 0,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "name": name,
+      "assigned_user_id": assignedUserId ?? 1, // Defaulting to 1 if null
+      "due_date": dueDate,
+      "recurring": recurring,
+      "repeats_every": repeatsEvery,
+      "repeat_until": repeatUntil,
+      "has_reminder": hasReminder,
+      "reminder_on_id": reminderOnId,
+      "reminder_at": reminderAt,
+      "related_to_module_id": relatedToModuleId,
+      "related_to_record_id": relatedToRecordId,
+      "description": description,
+      "is_high_priority": isHighPriority,
+    };
+
+    // Remove null values to keep request clean (optional, but good practice)
+    datadict.removeWhere((key, value) => value == null);
+
+    // Debug: Verify token is available
+    final token = await accessToken();
+    print(
+        "🔑 Store Task API - Token from SharedPreferences: ${token.isNotEmpty ? '${token.substring(0, 10)}...' : 'EMPTY'}");
+
+    if (token.isEmpty) {
+      print(
+          "❌ Store Task API - No access token found! User may not be logged in.");
+      return ApiResponse(
+        result: false,
+        error: "Authentication required. Please log in again.",
+      );
+    }
+
+    print("✅ Store Task API - Creating task: $name");
+
+    return await callApiFunction(
+      context,
+      "task/store",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> dashboard({
     required BuildContext context,
   }) async {
