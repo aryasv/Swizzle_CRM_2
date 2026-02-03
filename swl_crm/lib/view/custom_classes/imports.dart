@@ -18,6 +18,7 @@ export 'package:swl_crm/view/bottom_nav/nav_wrapper.dart';
 export 'package:swl_crm/view/companies/companies_form_page.dart';
 export 'package:swl_crm/view/companies/companies_list.dart';
 export 'package:swl_crm/view/companies/companies_page.dart';
+export 'package:swl_crm/view/companies/companies_details_page.dart';
 
 //Folder > contacts
 export 'package:swl_crm/view/contacts/contacts_page.dart';
