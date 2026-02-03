@@ -1454,6 +1454,94 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> editTask({
+    required BuildContext context,
+    required String taskUuid,
+    required int taskId,
+  }) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String accountId = prefs.getString('account_id') ?? "1";
+
+    final Map<String, dynamic> datadict = {
+      "task_id": taskId,
+      "account_id": accountId,
+    };
+
+    // Debug: Verify token is available
+    final token = await accessToken();
+    print(
+        "🔑 Edit Task API - Token from SharedPreferences: ${token.isNotEmpty ? '${token.substring(0, 10)}...' : 'EMPTY'}");
+
+    if (token.isEmpty) {
+      print(
+          "❌ Edit Task API - No access token found! User may not be logged in.");
+      return ApiResponse(
+        result: false,
+        error: "Authentication required. Please log in again.",
+      );
+    }
+
+    print("✅ Edit Task API - Fetching details for task UUID: $taskUuid (ID: $taskId)");
+
+    return await callApiFunction(
+      context,
+      "task/$taskUuid/edit",
+      datadict,
+    );
+  }
+
+  Future<ApiResponse> updateTask({
+    required BuildContext context,
+    required String taskUuid,
+    required String name,
+    int? assignedUserId,
+    String? dueDate,
+    int recurring = 0,
+    String? repeatsEvery,
+    String? repeatUntil,
+    int hasReminder = 0,
+    int? reminderOnId,
+    String? reminderAt,
+    int? relatedToModuleId,
+    int? relatedToRecordId,
+    String? description,
+    int isHighPriority = 0,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "name": name,
+      "assigned_user_id": assignedUserId ?? 1,
+      "due_date": dueDate,
+      "recurring": recurring,
+      "repeats_every": repeatsEvery,
+      "repeat_until": repeatUntil,
+      "has_reminder": hasReminder,
+      "reminder_on_id": reminderOnId,
+      "reminder_at": reminderAt,
+      "related_to_module_id": relatedToModuleId,
+      "related_to_record_id": relatedToRecordId,
+      "description": description,
+      "is_high_priority": isHighPriority,
+    };
+
+    datadict.removeWhere((key, value) => value == null);
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(
+        result: false,
+        error: "Authentication required. Please log in again.",
+      );
+    }
+
+    print("✅ Update Task API - Updating task: $taskUuid");
+
+    return await callApiFunction(
+      context,
+      "task/$taskUuid/update",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> dashboard({
     required BuildContext context,
   }) async {
