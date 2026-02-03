@@ -87,8 +87,8 @@ class _NavTasksState extends State<NavTasks>
                 : TabBarView(
               controller: _tabController,
               children: [
-                TasksList(tasks: activeTasks, onRefresh: _loadTasks),
-                TasksList(tasks: inactiveTasks, onRefresh: _loadTasks),
+                TasksList(tasks: activeTasks, onRefresh: _loadTasks, isActive: true),
+                TasksList(tasks: inactiveTasks, onRefresh: _loadTasks, isActive: false),
               ],
             ),
           ),

@@ -1548,6 +1548,38 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> deleteTask({
+    required BuildContext context,
+    required String taskUuid,
+    required int taskId,
+    String action = "deactivate",
+  }) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String accountId = prefs.getString('account_id') ?? "1";
+
+    final Map<String, dynamic> datadict = {
+      "task_id": taskId,
+      "account_id": accountId,
+      "action": action,
+    };
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(
+        result: false,
+        error: "Authentication required. Please log in again.",
+      );
+    }
+
+    print("✅ Delete Task API - Action: $action on task: $taskUuid (ID: $taskId)");
+
+    return await callApiFunction(
+      context,
+      "task/$taskUuid/delete",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> dashboard({
     required BuildContext context,
   }) async {

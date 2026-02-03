@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/tasks_model.dart';
-import 'package:swl_crm/view/tasks/tasks_form_page.dart';
 
 class TasksList extends StatelessWidget {
   final List<TaskModel> tasks;
   final VoidCallback onRefresh;
+  final bool isActive;
 
   const TasksList({
     super.key,
     required this.tasks,
     required this.onRefresh,
+    this.isActive = true,
   });
 
   @override
@@ -27,7 +29,11 @@ class TasksList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: tasks.length,
       itemBuilder: (context, index) {
-        return _TaskCard(task: tasks[index], onRefresh: onRefresh);
+        return _TaskCard(
+          task: tasks[index],
+          onRefresh: onRefresh,
+          isActive: isActive,
+        );
       },
     );
   }
@@ -36,8 +42,13 @@ class TasksList extends StatelessWidget {
 class _TaskCard extends StatelessWidget {
   final TaskModel task;
   final VoidCallback onRefresh;
+  final bool isActive;
 
-  const _TaskCard({required this.task, required this.onRefresh});
+  const _TaskCard({
+    required this.task,
+    required this.onRefresh,
+    required this.isActive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -85,19 +96,34 @@ class _TaskCard extends StatelessWidget {
                     if (result == true) {
                       onRefresh();
                     }
+                  } else if (value == 'deactivate') {
+                    _updateStatus(context, 'deactivate');
+                  } else if (value == 'activate') {
+                    _updateStatus(context, 'activate');
                   }
                 },
                 child: const Icon(Icons.more_vert, size: 22),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Edit'),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Delete'),
-                  ),
-                ],
+                itemBuilder: (context) {
+                  if (isActive) {
+                    return const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit'),
+                      ),
+                      PopupMenuItem(
+                        value: 'deactivate',
+                        child: Text('Deactivate'),
+                      ),
+                    ];
+                  } else {
+                    return const [
+                      PopupMenuItem(
+                        value: 'activate',
+                        child: Text('Activate'),
+                      ),
+                    ];
+                  }
+                },
               ),
             ],
           ),
@@ -162,6 +188,44 @@ class _TaskCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _updateStatus(BuildContext context, String action) async {
+    final WebFunctions api = WebFunctions();
+    
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final res = await api.deleteTask(
+      context: context,
+      taskUuid: task.uuid,
+      taskId: task.id,
+      action: action,
+    );
+    
+    // Hide loading
+    Navigator.pop(context);
+
+    if (res.result) {
+      onRefresh();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Task ${action}d successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.error),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
