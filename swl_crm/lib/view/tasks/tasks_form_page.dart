@@ -141,6 +141,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
       res = await _api.updateTask(
         context: context,
         taskUuid: widget.taskUuid!,
+        taskId: widget.taskId ?? 0,
         name: _taskName.text.trim(),
         description: _description.text.trim(),
         assignedUserId: assignedId,

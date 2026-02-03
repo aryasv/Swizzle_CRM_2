@@ -1493,6 +1493,7 @@ class WebFunctions {
   Future<ApiResponse> updateTask({
     required BuildContext context,
     required String taskUuid,
+    required int taskId,
     required String name,
     int? assignedUserId,
     String? dueDate,
@@ -1507,7 +1508,12 @@ class WebFunctions {
     String? description,
     int isHighPriority = 0,
   }) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String accountId = prefs.getString('account_id') ?? "1";
+
     final Map<String, dynamic> datadict = {
+      "task_id": taskId,
+      "account_id": accountId,
       "name": name,
       "assigned_user_id": assignedUserId ?? 1,
       "due_date": dueDate,
@@ -1533,7 +1539,7 @@ class WebFunctions {
       );
     }
 
-    print("✅ Update Task API - Updating task: $taskUuid");
+    print("✅ Update Task API - Updating task: $taskUuid (ID: $taskId, Account: $accountId)");
 
     return await callApiFunction(
       context,
