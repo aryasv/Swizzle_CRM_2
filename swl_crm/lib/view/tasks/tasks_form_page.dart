@@ -28,18 +28,19 @@ class _TasksFormPageState extends State<TasksFormPage> {
   final List<String> _relatedOptions = ['None', 'Contacts', 'Companies'];
 
   final WebFunctions _api = WebFunctions();
-  bool isLoading = false;
+  bool _isSaving = false;
+  bool _isLoadingDetails = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.taskUuid != null) {
+      _isLoadingDetails = true;
       _loadTaskDetails();
     }
   }
 
   Future<void> _loadTaskDetails() async {
-    setState(() => isLoading = true);
     final res = await _api.editTask(
       context: context,
       taskUuid: widget.taskUuid!,
@@ -87,7 +88,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
     } else {
       _showError(res.error ?? 'Failed to load task details');
     }
-    setState(() => isLoading = false);
+    if (mounted) setState(() => _isLoadingDetails = false);
   }
 
   @override
@@ -122,7 +123,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
       return;
     }
 
-    setState(() => isLoading = true);
+    setState(() => _isSaving = true);
 
     // Map assignee name to ID (Mock logic)
     int assignedId = 1;
@@ -172,7 +173,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
       );
     }
 
-    setState(() => isLoading = false);
+    setState(() => _isSaving = false);
 
     if (res.result) {
       if (mounted) Navigator.pop(context, true);
@@ -192,6 +193,15 @@ class _TasksFormPageState extends State<TasksFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingDetails) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
@@ -261,8 +271,8 @@ class _TasksFormPageState extends State<TasksFormPage> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: isLoading ? null : _saveTask,
-                      icon: isLoading
+                      onPressed: _isSaving ? null : _saveTask,
+                      icon: _isSaving
                           ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -270,7 +280,7 @@ class _TasksFormPageState extends State<TasksFormPage> {
                               strokeWidth: 2, color: Colors.white))
                           : Icon(widget.taskUuid != null ? Icons.edit : Icons.add, color: Colors.white),
                       label: Text(
-                        isLoading 
+                        _isSaving 
                             ? (widget.taskUuid != null ? 'Updating...' : 'Creating...') 
                             : (widget.taskUuid != null ? 'Update Task' : 'Create Task'),
                         style: const TextStyle(
