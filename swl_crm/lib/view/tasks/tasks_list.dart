@@ -4,10 +4,12 @@ import 'package:swl_crm/view/tasks/tasks_form_page.dart';
 
 class TasksList extends StatelessWidget {
   final List<TaskModel> tasks;
+  final VoidCallback onRefresh;
 
   const TasksList({
     super.key,
     required this.tasks,
+    required this.onRefresh,
   });
 
   @override
@@ -25,7 +27,7 @@ class TasksList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: tasks.length,
       itemBuilder: (context, index) {
-        return _TaskCard(task: tasks[index]);
+        return _TaskCard(task: tasks[index], onRefresh: onRefresh);
       },
     );
   }
@@ -33,8 +35,9 @@ class TasksList extends StatelessWidget {
 
 class _TaskCard extends StatelessWidget {
   final TaskModel task;
+  final VoidCallback onRefresh;
 
-  const _TaskCard({required this.task});
+  const _TaskCard({required this.task, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +81,10 @@ class _TaskCard extends StatelessWidget {
                         ),
                       ),
                     );
+                    
+                    if (result == true) {
+                      onRefresh();
+                    }
                   }
                 },
                 child: const Icon(Icons.more_vert, size: 22),
