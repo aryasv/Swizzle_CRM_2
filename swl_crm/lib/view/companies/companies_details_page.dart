@@ -1,8 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/companies_details_model.dart';
 
-class CompaniesDetailsPage extends StatelessWidget {
-  const CompaniesDetailsPage({super.key});
+class CompaniesDetailsPage extends StatefulWidget {
+  final int companyId;
+  final String companyUuid;
+
+  const CompaniesDetailsPage({
+    super.key,
+    required this.companyId,
+    required this.companyUuid,
+  });
+
+  @override
+  State<CompaniesDetailsPage> createState() => _CompaniesDetailsPageState();
+}
+
+
+class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
+  CompanyDetailsModel? company;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompany();
+  }
+
+  Future<void> _loadCompany() async {
+    final api = WebFunctions();
+
+    final response = await api.companyDetails(
+      context: context,
+      companyUuid: widget.companyUuid,
+      companyId: widget.companyId,
+    );
+
+
+    if (!mounted) return;
+
+    if (response.result) {
+      company = CompanyDetailsModel.fromJson(
+        response.response!['data'],
+      );
+    }
+
+    setState(() => isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,19 +58,15 @@ class CompaniesDetailsPage extends StatelessWidget {
             title: 'Company Details',
             showBack: true,
             rightAction1: SizedBox(
-              height: 40,
               width: 40,
+              height: 40,
               child: PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
                 icon: const Icon(Icons.more_vert, size: 22),
                 offset: const Offset(0, 40),
-                onSelected: (value) {
-                  if (value == 'edit') {
-
+                onSelected: (v) {
+                  if (v == 'edit') {
+                    // TODO: Navigate to edit page
                   }
                 },
                 itemBuilder: (context) => const [
@@ -45,24 +85,26 @@ class CompaniesDetailsPage extends StatelessWidget {
             ),
           ),
 
-
-
           Expanded(
-            child: SingleChildScrollView(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : company == null
+                ? const Center(child: Text('Failed to load company'))
+                : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
               child: Column(
                 children: [
-                  _companyHeader(),
+                  _companyHeader(company!),
                   const SizedBox(height: 16),
 
                   _section(
                     title: 'Company Information',
                     icon: Icons.info_outline,
                     children: [
-                      _infoRow(Icons.business, 'Company Name', 'Deepaks Company'),
-                      _infoRow(Icons.phone, 'Phone', '9846464687', isLink: true),
-                      _infoRow(Icons.language, 'Website', 'https://www.google.com/', isLink: true),
-                      _infoRow(Icons.email, 'Email', 'deepak@gmail.com', isLink: true),
+                      _infoRow(Icons.business, 'Company Name', company!.name),
+                      _infoRow(Icons.phone, 'Phone', company!.phone, isLink: true),
+                      _infoRow(Icons.language, 'Website', company!.website, isLink: true),
+                      _infoRow(Icons.email, 'Email', company!.email, isLink: true),
                     ],
                   ),
 
@@ -72,25 +114,9 @@ class CompaniesDetailsPage extends StatelessWidget {
                     title: 'Address Information',
                     icon: Icons.location_on_outlined,
                     children: [
-                      _infoRow(Icons.text_fields, 'Billing Street', '123 street\nBilling street'),
-                      _infoRow(Icons.text_fields, 'Billing City', 'Trivandrum'),
-                      _infoRow(Icons.text_fields, 'Billing State', 'Kerala'),
-                      _infoRow(Icons.text_fields, 'Billing Country', 'India'),
-                      _infoRow(Icons.text_fields, 'Billing Zip', '695308'),
-                      _infoRow(Icons.text_fields, 'Billing Code', '123098'),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _section(
-                    title: 'Additional Information',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.text_fields, 'CF - Text', 'CF Billing'),
-                      _infoRow(Icons.text_fields, 'CF - Date', '2026-01-28'),
-                      _infoRow(Icons.text_fields, 'CF - Picklist', '2'),
-                      _infoRow(Icons.text_fields, 'CF - Lookup', '2'),
+                      _infoRow(Icons.location_city, 'Address', company!.address),
+                      _infoRow(Icons.location_city, 'City', company!.city),
+                      _infoRow(Icons.pin_drop, 'Zip', company!.zip),
                     ],
                   ),
                 ],
@@ -102,8 +128,8 @@ class CompaniesDetailsPage extends StatelessWidget {
     );
   }
 
-  //
-  Widget _companyHeader() {
+  // HEADER
+  Widget _companyHeader(CompanyDetailsModel c) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -119,26 +145,29 @@ class CompaniesDetailsPage extends StatelessWidget {
             child: const Icon(Icons.apartment, color: Color(0xFF2A7DE1)),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Deepaks Company',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'https://www.google.com/',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  c.name,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  c.website,
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-
+  // SECTION
   Widget _section({
     required String title,
     required IconData icon,
@@ -168,37 +197,52 @@ class CompaniesDetailsPage extends StatelessWidget {
     );
   }
 
-
-  Widget _infoRow(IconData icon, String label, String value, {bool isLink = false}) {
+  // 
+  Widget _infoRow(
+      IconData icon,
+      String label,
+      String value, {
+        bool isLink = false,
+      }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF2A7DE1)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isLink ? const Color(0xFF2A7DE1) : Colors.black,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final leftWidth = constraints.maxWidth * 0.35;
+          final rightWidth = constraints.maxWidth * 0.65;
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 18, color: const Color(0xFF2A7DE1)),
+              const SizedBox(width: 12),
+
+              SizedBox(
+                width: leftWidth - 30,
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
               ),
-            ),
-          ),
-        ],
+
+              SizedBox(
+                width: rightWidth,
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isLink ? const Color(0xFF2A7DE1) : Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
-
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
@@ -209,6 +253,4 @@ class CompaniesDetailsPage extends StatelessWidget {
       ],
     );
   }
-
-
 }

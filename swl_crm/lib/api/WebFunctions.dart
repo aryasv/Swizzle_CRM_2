@@ -1205,6 +1205,23 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> companyDetails({
+    required BuildContext context,
+    required String companyUuid,
+    required int companyId,
+  }) async {
+    final Map<String, dynamic> data = {
+      "company_id": companyId,
+    };
+
+    return await callApiFunction(
+      context,
+      "company/$companyUuid/view",
+      data,
+    );
+  }
+
+
   Future<ApiResponse> getCompanyFormSchema({
     required BuildContext context,
   }) async {

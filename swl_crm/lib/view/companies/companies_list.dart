@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_model.dart';
 
-import 'companies_form_page.dart';
-
 class CompaniesList extends StatelessWidget {
   final List<CompanyModel> companies;
   final bool isActiveTab;
@@ -56,127 +54,141 @@ class _CompanyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final api = WebFunctions();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F1FD),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.apartment_outlined,
-              color: Color(0xFF2A7DE1),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CompaniesDetailsPage(
+              companyId: company.id,
+              companyUuid: company.uuid,
             ),
           ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  company.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                _InfoRow(Icons.phone_outlined, company.phone),
-                const SizedBox(height: 4),
-                _InfoRow(Icons.language, company.website),
-              ],
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 8),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F1FD),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.apartment_outlined,
+                color: Color(0xFF2A7DE1),
+              ),
             ),
-          ),
-
-          PopupMenuButton<String>(
-            padding: EdgeInsets.zero,
-            child: const Icon(Icons.more_vert, size: 20),
-            onSelected: (value) async {
-              if (value == 'edit') {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CompaniesFormPage(company: company),
-                  ),
-                );
-
-              }
-
-              if (value == 'deactivate') {
-                await api.deleteCompany(
-                  context: context,
-                  companyUuid: company.uuid,
-                  companyId: company.id,
-                );
-                onRefresh();
-              }
-
-              if (value == 'activate') {
-                await api.deleteCompany(
-                  context: context,
-                  companyUuid: company.uuid,
-                  companyId: company.id,
-                  action: 'activate',
-                );
-                onRefresh();
-              }
-            },
-            itemBuilder: (context) {
-              if (isActiveTab) {
-                return const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
+      
+            const SizedBox(width: 12),
+      
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    company.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  PopupMenuItem(
-                    value: 'deactivate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.block, size: 18, color: Colors.red),
-                        SizedBox(width: 10),
-                        Text('Deactivate'),
-                      ],
+                  const SizedBox(height: 6),
+                  _InfoRow(Icons.phone_outlined, company.phone),
+                  const SizedBox(height: 4),
+                  _InfoRow(Icons.language, company.website),
+                ],
+              ),
+            ),
+      
+            PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.more_vert, size: 20),
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CompaniesFormPage(company: company),
                     ),
-                  ),
-                ];
-              } else {
-                return const [
-                  PopupMenuItem(
-                    value: 'activate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Activate'),
-                      ],
+                  );
+      
+                }
+      
+                if (value == 'deactivate') {
+                  await api.deleteCompany(
+                    context: context,
+                    companyUuid: company.uuid,
+                    companyId: company.id,
+                  );
+                  onRefresh();
+                }
+      
+                if (value == 'activate') {
+                  await api.deleteCompany(
+                    context: context,
+                    companyUuid: company.uuid,
+                    companyId: company.id,
+                    action: 'activate',
+                  );
+                  onRefresh();
+                }
+              },
+              itemBuilder: (context) {
+                if (isActiveTab) {
+                  return const [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18, color: Colors.green),
+                          SizedBox(width: 10),
+                          Text('Edit'),
+                        ],
+                      ),
                     ),
-                  ),
-                ];
-              }
-            },
-          ),
-        ],
+                    PopupMenuItem(
+                      value: 'deactivate',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, size: 18, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Deactivate'),
+                        ],
+                      ),
+                    ),
+                  ];
+                } else {
+                  return const [
+                    PopupMenuItem(
+                      value: 'activate',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 18, color: Colors.green),
+                          SizedBox(width: 10),
+                          Text('Activate'),
+                        ],
+                      ),
+                    ),
+                  ];
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
