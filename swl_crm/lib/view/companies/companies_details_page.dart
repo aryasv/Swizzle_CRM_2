@@ -78,7 +78,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                       city: company!.city,
                       zip: company!.zip,
                       state: '',
-                      country: '', 
+                      country: '',
                       isDeleted: false,
                     );
 

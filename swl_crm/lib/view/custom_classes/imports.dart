@@ -24,6 +24,7 @@ export 'package:swl_crm/view/companies/companies_details_page.dart';
 export 'package:swl_crm/view/contacts/contacts_page.dart';
 export 'package:swl_crm/view/contacts/contacts_list.dart';
 export 'package:swl_crm/view/contacts/contacts_form_page.dart';
+export 'package:swl_crm/view/contacts/contact_details.dart';
 
 //Folder > Custom Class > App Bar
 export 'package:swl_crm/view/custom_classes/custom_app_bar.dart';
