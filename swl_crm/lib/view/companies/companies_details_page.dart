@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
+import 'package:swl_crm/view/models/companies_model.dart';
 
 class CompaniesDetailsPage extends StatefulWidget {
   final int companyId;
@@ -64,9 +65,33 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.more_vert, size: 22),
                 offset: const Offset(0, 40),
-                onSelected: (v) {
-                  if (v == 'edit') {
-                    // TODO: Navigate to edit page
+                onSelected: (v) async {
+                  if (v == 'edit' && company != null) {
+                    final companyModel = CompanyModel(
+                      id: company!.id,
+                      uuid: company!.uuid,
+                      name: company!.name,
+                      phone: company!.phone,
+                      website: company!.website,
+                      email: company!.email,
+                      address: company!.address,
+                      city: company!.city,
+                      zip: company!.zip,
+                      state: '',
+                      country: '', 
+                      isDeleted: false,
+                    );
+
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CompaniesFormPage(company: companyModel),
+                      ),
+                    );
+
+                    if (result == true) {
+                      _loadCompany();
+                    }
                   }
                 },
                 itemBuilder: (context) => const [
@@ -91,7 +116,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                 : company == null
                 ? const Center(child: Text('Failed to load company'))
                 : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 72),
               child: Column(
                 children: [
                   _companyHeader(company!),
@@ -197,7 +222,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
     );
   }
 
-  // 
+  //
   Widget _infoRow(
       IconData icon,
       String label,
