@@ -9,6 +9,35 @@ class ContactDetailsPage extends StatefulWidget {
 }
 
 class _ContactDetailsPageState extends State<ContactDetailsPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    _testApi();
+  }
+
+  Future<void> _testApi() async {
+    final api = WebFunctions();
+
+    final response = await api.contactDetails(
+      context: context,
+      clientUuid: "CLIENT_UUID",
+      clientId: 12,
+    );
+
+    if (!mounted) return;
+
+    if (response.result) {
+      debugPrint("Contact Details API RESPONSE:");
+      debugPrint(response.response.toString());
+    } else {
+      debugPrint("Contact Details API ERROR:");
+      debugPrint(response.error);
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -235,7 +264,7 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
     );
   }
 
-  // 
+  //
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(

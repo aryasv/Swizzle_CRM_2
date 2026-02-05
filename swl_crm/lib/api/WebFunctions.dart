@@ -972,6 +972,23 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> contactDetails({
+    required BuildContext context,
+    required String clientUuid,
+    required int clientId,
+  }) async {
+    final Map<String, dynamic> data = {
+      "client_id": clientId,
+    };
+
+    return await callApiFunction(
+      context,
+      "contact/$clientUuid/view",
+      data,
+    );
+  }
+
+
   Future<ApiResponse> createContact({
     required BuildContext context,
     required String clientName,
