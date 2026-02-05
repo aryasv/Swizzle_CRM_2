@@ -22,16 +22,17 @@ class ContactDetailsModel {
   });
 
   factory ContactDetailsModel.fromJson(Map<String, dynamic> json) {
+    final data = json['client'] ?? json;
     return ContactDetailsModel(
-      id: json['id'],
-      uuid: json['uuid'],
-      firstName: json['first_name'] ?? '',
-      lastName: json['last_name'] ?? '',
-      fullName: json['full_name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      companyId: json['company_id'] ?? 0,
-      companyName: json['company_name'] ?? '',
+      id: data['id'] is int ? data['id'] : int.tryParse(data['id'].toString()) ?? 0,
+      uuid: data['uuid'] ?? '',
+      firstName: data['first_name'] ?? '',
+      lastName: data['last_name'] ?? '',
+      fullName: data['full_name'] ?? '',
+      email: data['email'] ?? '',
+      phone: data['phone'] ?? '',
+      companyId: data['company_id'] is int ? data['company_id'] : int.tryParse(data['company_id'].toString()) ?? 0,
+      companyName: data['company_name'] ?? '',
     );
   }
 }

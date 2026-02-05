@@ -96,180 +96,195 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ContactDetailsPage(
+              contactId: contact.id,
+              contactUuid: contact.uuid,
+            ),
           ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: const Color(0xFFE8F1FD),
-            child: Text(
-              contact.initials,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2A7DE1),
+        );
+        onRefresh(); 
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Avatar
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: const Color(0xFFE8F1FD),
+              child: Text(
+                contact.initials,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2A7DE1),
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          // Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  contact.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    contact.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                _InfoRow(Icons.business, contact.companyName),
-                const SizedBox(height: 4),
-                _InfoRow(Icons.email_outlined, contact.email),
-                const SizedBox(height: 4),
-                _InfoRow(Icons.phone_outlined, contact.phone),
-              ],
+                  const SizedBox(height: 6),
+                  _InfoRow(Icons.business, contact.companyName),
+                  const SizedBox(height: 4),
+                  _InfoRow(Icons.email_outlined, contact.email),
+                  const SizedBox(height: 4),
+                  _InfoRow(Icons.phone_outlined, contact.phone),
+                ],
+              ),
             ),
-          ),
 
-          // Menu
-          PopupMenuButton<String>(
-            padding: EdgeInsets.zero,
-            child: const Icon(Icons.more_vert, size: 20),
-            onSelected: (value) async {
-              final api = WebFunctions();
+            // Menu
+            PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.more_vert, size: 20),
+              onSelected: (value) async {
+                final api = WebFunctions();
 
-              // EDIT
-              if (value == 'edit') {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ContactsFormPage(contact: contact),
-                  ),
-                );
+                // EDIT
+                if (value == 'edit') {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ContactsFormPage(contact: contact),
+                    ),
+                  );
 
-                if (result == true) {
-                  onRefresh();
+                  if (result == true) {
+                    onRefresh();
+                  }
                 }
-              }
 
-              // DEACTIVATE
-              if (value == 'deactivate') {
-                final confirmed = await _confirmAction(
-                  context,
-                  'Deactivate Contact',
-                  'Are you sure you want to deactivate this contact?',
-                );
+                // DEACTIVATE
+                if (value == 'deactivate') {
+                  final confirmed = await _confirmAction(
+                    context,
+                    'Deactivate Contact',
+                    'Are you sure you want to deactivate this contact?',
+                  );
 
-                if (!confirmed) return;
+                  if (!confirmed) return;
 
-                final response = await api.deleteContact(
-                  context: context,
-                  clientUuid: contact.uuid,
-                  clientId: contact.id,
-                  action: 'deactivate',
-                );
+                  final response = await api.deleteContact(
+                    context: context,
+                    clientUuid: contact.uuid,
+                    clientId: contact.id,
+                    action: 'deactivate',
+                  );
 
-                if (!context.mounted) return;
+                  if (!context.mounted) return;
 
-                if (response.result) {
-                  _showSnack(context, 'Contact deactivated');
-                  onRefresh();
+                  if (response.result) {
+                    _showSnack(context, 'Contact deactivated');
+                    onRefresh();
+                  } else {
+                    _showSnack(context, response.error, isError: true);
+                  }
+                }
+
+                // ACTIVATE
+                if (value == 'activate') {
+                  final confirmed = await _confirmAction(
+                    context,
+                    'Activate Contact',
+                    'Do you want to activate this contact?',
+                  );
+
+                  if (!confirmed) return;
+
+                  final response = await api.deleteContact(
+                    context: context,
+                    clientUuid: contact.uuid,
+                    clientId: contact.id,
+                    action: 'activate',
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (response.result) {
+                    _showSnack(context, 'Contact activated');
+                    onRefresh();
+                  } else {
+                    _showSnack(context, response.error, isError: true);
+                  }
+                }
+              },
+
+              itemBuilder: (context) {
+                if (isActiveTab) {
+                  // ACTIVE TAB MENU
+                  return const [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18, color: Colors.green),
+                          SizedBox(width: 10),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'deactivate',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, size: 18, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Deactivate'),
+                        ],
+                      ),
+                    ),
+                  ];
                 } else {
-                  _showSnack(context, response.error, isError: true);
+                  // INACTIVE TAB MENU
+                  return const [
+                    PopupMenuItem(
+                      value: 'activate',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 18, color: Colors.green),
+                          SizedBox(width: 10),
+                          Text('Activate'),
+                        ],
+                      ),
+                    ),
+                  ];
                 }
-              }
+              },
+            ),
 
-              // ACTIVATE
-              if (value == 'activate') {
-                final confirmed = await _confirmAction(
-                  context,
-                  'Activate Contact',
-                  'Do you want to activate this contact?',
-                );
-
-                if (!confirmed) return;
-
-                final response = await api.deleteContact(
-                  context: context,
-                  clientUuid: contact.uuid,
-                  clientId: contact.id,
-                  action: 'activate',
-                );
-
-                if (!context.mounted) return;
-
-                if (response.result) {
-                  _showSnack(context, 'Contact activated');
-                  onRefresh();
-                } else {
-                  _showSnack(context, response.error, isError: true);
-                }
-              }
-            },
-
-            itemBuilder: (context) {
-              if (isActiveTab) {
-                // ACTIVE TAB MENU
-                return const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'deactivate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.block, size: 18, color: Colors.red),
-                        SizedBox(width: 10),
-                        Text('Deactivate'),
-                      ],
-                    ),
-                  ),
-                ];
-              } else {
-                // INACTIVE TAB MENU
-                return const [
-                  PopupMenuItem(
-                    value: 'activate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 18, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text('Activate'),
-                      ],
-                    ),
-                  ),
-                ];
-              }
-            },
-          ),
-
-        ],
+          ],
+        ),
       ),
     );
   }

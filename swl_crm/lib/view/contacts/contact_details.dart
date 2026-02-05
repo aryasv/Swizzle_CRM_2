@@ -1,42 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/contact_details_model.dart';
+import 'package:swl_crm/view/models/contacts_model.dart';
 
 class ContactDetailsPage extends StatefulWidget {
-  const ContactDetailsPage({super.key});
+  final int contactId;
+  final String contactUuid;
+
+  const ContactDetailsPage({
+    super.key,
+    required this.contactId,
+    required this.contactUuid,
+  });
 
   @override
   State<ContactDetailsPage> createState() => _ContactDetailsPageState();
 }
 
 class _ContactDetailsPageState extends State<ContactDetailsPage> {
+  ContactDetailsModel? contact;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _testApi();
+    _loadContact();
   }
 
-  Future<void> _testApi() async {
+  Future<void> _loadContact() async {
     final api = WebFunctions();
 
     final response = await api.contactDetails(
       context: context,
-      clientUuid: "CLIENT_UUID",
-      clientId: 12,
+      clientUuid: widget.contactUuid,
+      clientId: widget.contactId,
     );
 
     if (!mounted) return;
 
     if (response.result) {
-      debugPrint("Contact Details API RESPONSE:");
-      debugPrint(response.response.toString());
+      contact = ContactDetailsModel.fromJson(response.response!['data']);
     } else {
-      debugPrint("Contact Details API ERROR:");
-      debugPrint(response.error);
+      debugPrint("Contact Details API ERROR: ${response.error}");
     }
+
+    setState(() => isLoading = false);
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +67,29 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
                 ),
                 icon: const Icon(Icons.more_vert, size: 22),
                 offset: const Offset(0, 40),
-                onSelected: (value) {
-                  if (value == 'edit') {
+                onSelected: (value) async {
+                  if (value == 'edit' && contact != null) {
 
+                      final contactModel = ContactModel(
+                        id: contact!.id,
+                        uuid: contact!.uuid,
+                        name: contact!.fullName,
+                        email: contact!.email,
+                        phone: contact!.phone,
+                        companyName: contact!.companyName,
+                        isDeleted: false,
+                      );
+
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ContactsFormPage(contact: contactModel),
+                        ),
+                      );
+
+                      if (result == true) {
+                        _loadContact();
+                      }
                   }
                 },
                 itemBuilder: (context) => const [
@@ -80,73 +109,67 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
           ),
 
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
-              child: Column(
-                children: [
-                  _contactHeader(),
-                  const SizedBox(height: 16),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : contact == null
+                    ? const Center(child: Text('Failed to load contact'))
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
+                        child: Column(
+                          children: [
+                            _contactHeader(contact!),
+                            const SizedBox(height: 16),
 
-                  _section(
-                    title: 'Contact Information',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.person_outline, 'First Name', 'Arya Swizzle'),
-                      _infoRow(Icons.person_outline, 'Last Name', 'Arya'),
-                      _infoRow(Icons.email_outlined, 'Email', 'arya@swizzleup.com', isLink: true),
-                      _infoRow(Icons.phone_outlined, 'Phone', '9867676787', isLink: true),
-                      _infoRow(Icons.apartment_outlined, 'Company', 'Acme Corporation Updated', isLink: true),
-                    ],
-                  ),
+                            _section(
+                              title: 'Contact Information',
+                              icon: Icons.info_outline,
+                              children: [
+                                _infoRow(Icons.person_outline, 'First Name', contact!.firstName),
+                                _infoRow(Icons.person_outline, 'Last Name', contact!.lastName),
+                                _infoRow(Icons.email_outlined, 'Email', contact!.email, isLink: true),
+                                _infoRow(Icons.phone_outlined, 'Phone', contact!.phone, isLink: true),
+                                _infoRow(Icons.apartment_outlined, 'Company', contact!.companyName, isLink: true),
+                              ],
+                            ),
 
-                  const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                  _section(
-                    title: 'Description',
-                    icon: Icons.description_outlined,
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'test description',
-                            style: TextStyle(fontSize: 14),
-                          ),
+
+                            // _section(
+                            //   title: 'Description',
+                            //   icon: Icons.description_outlined,
+                            //   children: const [
+                            //     Padding(
+                            //       padding: EdgeInsets.all(16),
+                            //       child: Align(
+                            //         alignment: Alignment.centerLeft,
+                            //         child: Text(
+                            //           'No description available',
+                            //           style: TextStyle(fontSize: 14),
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                            // const SizedBox(height: 16),
+
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _section(
-                    title: 'Other Info',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.badge_outlined, 'Title', 'test'),
-                      _infoRow(Icons.phone_android_outlined, 'Mobile', '897655555', isLink: true),
-                      _infoRow(Icons.phone_outlined, 'Home Phone', '5567778889', isLink: true),
-                      _infoRow(Icons.mark_email_read_outlined, 'Email Opt Out', '1'),
-                      _infoRow(Icons.location_on_outlined, 'Mailing Street', '123 street'),
-                      _infoRow(Icons.location_city_outlined, 'Mailing City', '123 city'),
-                      _infoRow(Icons.map_outlined, 'Mailing State', '123 state'),
-                      _infoRow(Icons.public_outlined, 'Mailing Country', '123 country'),
-                      _infoRow(Icons.local_post_office_outlined, 'Mailing Zip', '123456'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
     );
   }
 
-  //
+  String _getInitials(String name) {
+    if (name.isEmpty) return '';
+    final parts = name.trim().split(' ');
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
+  }
 
-  Widget _contactHeader() {
+  Widget _contactHeader(ContactDetailsModel c) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -159,10 +182,10 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
               color: Color(0xFFE8F1FD),
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'AS',
-                style: TextStyle(
+                _getInitials(c.fullName),
+                style: const TextStyle(
                   color: Color(0xFF2A7DE1),
                   fontWeight: FontWeight.w600,
                 ),
@@ -172,15 +195,15 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
-                'Arya Swizzle Arya',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                c.fullName,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                'Acme Corporation Updated',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                c.companyName,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
             ],
           ),
@@ -188,8 +211,6 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
       ),
     );
   }
-
-  //
 
   Widget _section({
     required String title,
@@ -220,8 +241,6 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
     );
   }
 
-  //
-
   Widget _infoRow(
       IconData icon,
       String label,
@@ -235,8 +254,6 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
         children: [
           Icon(icon, size: 18, color: const Color(0xFF2A7DE1)),
           const SizedBox(width: 12),
-
-
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.30,
             child: Text(
@@ -244,10 +261,7 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ),
-
           const SizedBox(width: 8),
-
-
           Expanded(
             child: Text(
               value,
@@ -263,8 +277,6 @@ class _ContactDetailsPageState extends State<ContactDetailsPage> {
       ),
     );
   }
-
-  //
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
