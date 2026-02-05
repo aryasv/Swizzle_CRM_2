@@ -9,6 +9,33 @@ class TaskDetailsPage extends StatefulWidget {
 }
 
 class _TaskDetailsPageState extends State<TaskDetailsPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    _testApi();
+  }
+
+  Future<void> _testApi() async {
+    final api = WebFunctions();
+
+    final response = await api.taskDetails(
+      context: context,
+      taskUuid: "TASK_UUID",
+      taskId: 69,
+    );
+
+    if (!mounted) return;
+
+    if (response.result) {
+      debugPrint("Task Details API RESPONSE:");
+      debugPrint(response.response.toString());
+    } else {
+      debugPrint("Task Details API ERROR:");
+      debugPrint(response.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -284,7 +311,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     );
   }
 
-  
+
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,

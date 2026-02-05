@@ -1430,6 +1430,23 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> taskDetails({
+    required BuildContext context,
+    required String taskUuid,
+    required int taskId,
+  }) async {
+    final Map<String, dynamic> data = {
+      "task_id": taskId,
+    };
+
+    return await callApiFunction(
+      context,
+      "task/$taskUuid/view",
+      data,
+    );
+  }
+
+
   Future<ApiResponse> storeTask({
     required BuildContext context,
     required String name,
