@@ -1649,7 +1649,7 @@ class WebFunctions {
       );
     }
 
-    print("✅ Deals API - Calling deals endpoint with status: $status, page: $page");
+    print("Deals API - Calling deals endpoint with status: $status, page: $page");
 
     return await callApiFunction(
       context,
@@ -1657,6 +1657,7 @@ class WebFunctions {
       datadict,
     );
   }
+
 
   Future<ApiResponse> dealDetails({
     required BuildContext context,

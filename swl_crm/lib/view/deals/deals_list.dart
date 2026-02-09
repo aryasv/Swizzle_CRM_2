@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/deals_model.dart';
 
 class DealsList extends StatefulWidget {
   const DealsList({super.key});
@@ -10,7 +11,7 @@ class DealsList extends StatefulWidget {
 
 class _DealsListState extends State<DealsList> {
   bool _isLoading = true;
-  List<dynamic> _deals = [];
+  List<DealModel> _deals = [];
   int _page = 1;
   bool _hasMore = true;
   final ScrollController _scrollController = ScrollController();
@@ -45,27 +46,24 @@ class _DealsListState extends State<DealsList> {
     try {
       final response = await WebFunctions().deals(
         context: context,
-        status: 'active', // or 'all' depending on requirement, defaults to active usually
+        status: 'active', // or 'all' depending on requirement
         page: _page,
       );
 
-      if (response.result) {
-        final data = response.response?['data'];
-        final List<dynamic> newDeals = data?['deals'] ?? data?['deal'] ?? [];
-        final Map<String, dynamic>? meta = response.response?['data'];
+      if (response.result && response.response != null) {
+        final dealsResponse = DealsResponse.fromJson(response.response!);
         
-        // Check pagination
-        if (meta != null && meta['last_page'] != null) {
-             if (_page >= meta['last_page']) {
+        if (dealsResponse.deals.isEmpty) {
+          _hasMore = false;
+        } else {
+             if (_page >= dealsResponse.lastPage) {
                 _hasMore = false;
              }
-        } else if (newDeals.isEmpty) {
-            _hasMore = false;
         }
 
         if (mounted) {
           setState(() {
-            _deals.addAll(newDeals);
+            _deals.addAll(dealsResponse.deals);
             _page++;
             _isLoading = false;
           });
@@ -73,7 +71,6 @@ class _DealsListState extends State<DealsList> {
       } else {
         if (mounted) {
           setState(() => _isLoading = false);
-          // show error?
         }
       }
     } catch (e) {
@@ -107,19 +104,13 @@ class _DealsListState extends State<DealsList> {
         }
 
         final deal = _deals[index];
-        // Parse values
-        final String title = deal['title'] ?? 'No Title';
-        final String status = deal['account_stage']?['name'] ?? deal['status'] ?? 'Open'; // Adjust based on actual API
-        final String amount = deal['amount']?.toString() ?? '0.00'; // Make sure to format currency if needed
-        final String closingDate = deal['closing_date'] ?? 'N/A';
-        final String clientName = deal['client']?['client_name'] ?? 'N/A';
 
         return DealCard(
-          title: title,
-          status: status,
-          amount: amount,
-          clientName: clientName,
-          closingDate: closingDate,
+          title: deal.title,
+          status: deal.stageName.isNotEmpty ? deal.stageName : deal.status,
+          amount: deal.amount,
+          clientName: deal.clientName,
+          closingDate: deal.closingDate,
         );
       },
     );

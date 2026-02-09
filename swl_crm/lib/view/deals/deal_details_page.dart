@@ -11,6 +11,33 @@ class DealDetailsPage extends StatefulWidget {
 class _DealDetailsPageState extends State<DealDetailsPage> {
 
   @override
+  void initState() {
+    super.initState();
+    _testApi();
+  }
+
+  Future<void> _testApi() async {
+    final api = WebFunctions();
+
+    final response = await api.dealDetails(
+      context: context,
+      dealUuid: "PUT_DEAL_UUID_HERE",
+      dealId: 25,
+    );
+
+    if (!mounted) return;
+
+    if (response.result) {
+      debugPrint("Deal Details API RESPONSE:");
+      debugPrint(response.response.toString());
+    } else {
+      debugPrint("Deal Details API ERROR:");
+      debugPrint(response.error);
+    }
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -121,7 +148,7 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
     );
   }
 
-  /// SECTION
+  // SECTION
   Widget _section({
     required String title,
     required IconData icon,
@@ -151,7 +178,7 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
     );
   }
 
-  // INFO ROW 
+  // INFO ROW
   Widget _infoRow(IconData icon, String label, String value, {bool isLink = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
