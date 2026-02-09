@@ -45,6 +45,7 @@ export 'package:swl_crm/view/custom_classes/dimensions.dart';
 //Folder > deals
 export 'package:swl_crm/view/deals/deals_list.dart';
 export 'package:swl_crm/view/deals/deal_form_page.dart';
+export 'package:swl_crm/view/deals/deal_details_page.dart';
 
 //Folder > products
 export 'package:swl_crm/view/products/products_create_page.dart';
