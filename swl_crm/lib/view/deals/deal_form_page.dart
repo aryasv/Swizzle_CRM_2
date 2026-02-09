@@ -9,28 +9,139 @@ class DealFormPage extends StatefulWidget {
 }
 
 class _DealFormPageState extends State<DealFormPage> {
-
   final TextEditingController _dealName = TextEditingController();
   final TextEditingController _amount = TextEditingController();
   final TextEditingController _description = TextEditingController();
 
-  String? _company;
-  String? _contact;
-  String? _stage;
+  // Store IDs
+  int? _companyId;
+  int? _contactId;
+  int? _stageId;
   String? _closingDate;
   String? _devCompletionDate;
 
-  final List<String> _companies = ['Acme Corp', 'Deepaks Company'];
-  final List<String> _contacts = ['Arya Swizzle', 'Jonas Fry'];
-  final List<String> _stages = ['Prospect', 'Negotiation', 'Closed Won'];
+  // Data lists
+  List<Map<String, dynamic>> _companies = [];
+  List<Map<String, dynamic>> _contacts = [];
+  
+  // Static stages for now, mapped to IDs
+  final List<Map<String, dynamic>> _stages = [
+    {'id': 1, 'name': 'Prospect'},
+    {'id': 2, 'name': 'Negotiation'},
+    {'id': 3, 'name': 'Closed Won'},
+    {'id': 4, 'name': 'Closed Lost'},
+  ];
+
+  bool _isLoading = false;
+  bool _isInitializing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDropdownData();
+  }
+
+  Future<void> _fetchDropdownData() async {
+    try {
+      final companiesResponse = await WebFunctions().companies(
+        context: context, 
+        status: 'active', 
+        page: 1
+      );
+      final contactsResponse = await WebFunctions().contacts(
+        context: context, 
+        status: 'active', 
+        page: 1
+      );
+
+      if (mounted) {
+        setState(() {
+          if (companiesResponse.result) {
+            _companies = List<Map<String, dynamic>>.from(
+              companiesResponse.response?['data']?['company'] ?? []
+            );
+          }
+          if (contactsResponse.result) {
+            _contacts = List<Map<String, dynamic>>.from(
+              contactsResponse.response?['data']?['clients'] ?? []
+            );
+          }
+          _isInitializing = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching dropdown data: $e");
+      if (mounted) setState(() => _isInitializing = false);
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_dealName.text.isEmpty || 
+        _amount.text.isEmpty || 
+        _companyId == null || 
+        _contactId == null || 
+        _stageId == null ||
+        _closingDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all required fields")),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await WebFunctions().storeDeal(
+        context: context,
+        title: _dealName.text,
+        companyId: _companyId!,
+        clientId: _contactId!,
+        accountStageId: _stageId!,
+        amount: double.tryParse(_amount.text) ?? 0.0,
+        closingDate: _closingDate!, // Ensure format matches API expectation
+        description: _description.text,
+        customField153: _devCompletionDate,
+        // Optional: assignedUsers, products
+      );
+
+      if (response.result) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Deal created successfully")),
+          );
+          Navigator.pop(context, true); // Return true to trigger refresh
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.error)),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Error creating deal: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("An error occurred")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitializing) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-
           /// APP BAR
           const CustomAppBar(
             title: 'Create Deal',
@@ -43,7 +154,6 @@ class _DealFormPageState extends State<DealFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   const SizedBox(height: 16),
 
                   //DEAL INFORMATION
@@ -64,23 +174,29 @@ class _DealFormPageState extends State<DealFormPage> {
 
                   _dropdown(
                     hint: 'Company Name',
-                    value: _company,
+                    value: _companyId,
                     items: _companies,
-                    onChanged: (v) => setState(() => _company = v),
+                    nameKey: 'name', 
+                    idKey: 'id', 
+                    onChanged: (v) => setState(() => _companyId = v),
                   ),
 
                   _dropdown(
                     hint: 'Contact Name',
-                    value: _contact,
+                    value: _contactId,
                     items: _contacts,
-                    onChanged: (v) => setState(() => _contact = v),
+                    nameKey: 'client_name',
+                    idKey: 'id', 
+                    onChanged: (v) => setState(() => _contactId = v),
                   ),
 
                   _dropdown(
                     hint: 'Stage',
-                    value: _stage,
+                    value: _stageId,
                     items: _stages,
-                    onChanged: (v) => setState(() => _stage = v),
+                    nameKey: 'name',
+                    idKey: 'id',
+                    onChanged: (v) => setState(() => _stageId = v),
                   ),
 
                   _field(
@@ -101,9 +217,10 @@ class _DealFormPageState extends State<DealFormPage> {
                       );
 
                       if (date != null) {
+                        final String month = date.month.toString().padLeft(2, '0');
+                        final String day = date.day.toString().padLeft(2, '0');
                         setState(() {
-                          _closingDate =
-                          "${date.day}/${date.month}/${date.year}";
+                          _closingDate = "$month/$day/${date.year}";
                         });
                       }
                     },
@@ -141,9 +258,10 @@ class _DealFormPageState extends State<DealFormPage> {
                       );
 
                       if (date != null) {
+                        final String month = date.month.toString().padLeft(2, '0');
+                        final String day = date.day.toString().padLeft(2, '0');
                         setState(() {
-                          _devCompletionDate =
-                          "${date.day}/${date.month}/${date.year}";
+                          _devCompletionDate = "$month/$day/${date.year}";
                         });
                       }
                     },
@@ -169,15 +287,21 @@ class _DealFormPageState extends State<DealFormPage> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () {},
-            child: const Text(
-              'Create Deal',
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                color: Colors.white
-              ),
-            ),
+            onPressed: _isLoading ? null : _submit,
+            child: _isLoading 
+              ? const SizedBox(
+                  height: 20, 
+                  width: 20, 
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                ) 
+              : const Text(
+                  'Create Deal',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    color: Colors.white
+                  ),
+                ),
           ),
         ),
       ),
@@ -218,18 +342,27 @@ class _DealFormPageState extends State<DealFormPage> {
   //
   Widget _dropdown({
     required String hint,
-    required String? value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
+    required int? value,
+    required List<Map<String, dynamic>> items,
+    required String nameKey,
+    required String idKey,
+    required ValueChanged<int?> onChanged,
   }) {
+    
+    final uniqueItems = <int>{};
+    final distinctItems = items.where((item) => uniqueItems.add(item[idKey])).toList();
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField<String>(
+      child: DropdownButtonFormField<int>(
         value: value,
         hint: Text(hint),
-        items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-            .toList(),
+        items: distinctItems.map((e) {
+          return DropdownMenuItem<int>(
+            value: e[idKey] as int,
+            child: Text(e[nameKey]?.toString() ?? 'N/A'),
+          );
+        }).toList(),
         onChanged: onChanged,
         decoration: _inputDecoration(hint),
       ),
@@ -264,7 +397,7 @@ class _DealFormPageState extends State<DealFormPage> {
       filled: true,
       fillColor: Colors.white,
       contentPadding:
-      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Colors.black12),

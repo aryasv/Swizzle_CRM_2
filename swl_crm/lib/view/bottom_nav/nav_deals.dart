@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
-class NavDeals extends StatelessWidget {
+class NavDeals extends StatefulWidget {
   const NavDeals({super.key});
+
+  @override
+  State<NavDeals> createState() => _NavDealsState();
+}
+
+class _NavDealsState extends State<NavDeals> {
+  int _refreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -13,17 +20,12 @@ class NavDeals extends StatelessWidget {
           children: [
             // App Bar
             CustomAppBar(
-
               title: 'Deals',
               showBack: false,
               rightAction1: const Icon(Icons.filter_list, size: 20),
-              onRightAction1: () {
-
-              },
+              onRightAction1: () {},
               rightAction2: const Icon(Icons.view_module_outlined, size: 20),
-              onRightAction2: () {
-
-              },
+              onRightAction2: () {},
             ),
 
             // Search
@@ -47,8 +49,8 @@ class NavDeals extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Deals list
-            const Expanded(
-              child: DealsList(),
+            Expanded(
+              child: DealsList(key: ValueKey(_refreshKey)),
             ),
           ],
         ),
@@ -57,7 +59,20 @@ class NavDeals extends StatelessWidget {
       // Floating add button
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2A7DE1),
-        onPressed: () {},
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DealFormPage(),
+            ),
+          );
+
+          if (result == true) {
+            setState(() {
+              _refreshKey++;
+            });
+          }
+        },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

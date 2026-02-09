@@ -1,39 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 
-class DealsList extends StatelessWidget {
+class DealsList extends StatefulWidget {
   const DealsList({super.key});
 
-  // Static List
-  static final List<Map<String, String>> _deals = [
-    {
-      'title': 'Project Management Tool',
-      'status': 'Open',
-      'amount': '₹ 62,000.00',
-    },
-    {
-      'title': 'Game Analytics Platform',
-      'status': 'Open',
-      'amount': '₹ 45,000.00',
-    },
-    {
-      'title': 'Booking System',
-      'status': 'Open',
-      'amount': '₹ 38,000.00',
-    },
-  ];
+  @override
+  State<DealsList> createState() => _DealsListState();
+}
+
+class _DealsListState extends State<DealsList> {
+  bool _isLoading = true;
+  List<dynamic> _deals = [];
+  int _page = 1;
+  bool _hasMore = true;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDeals();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        _hasMore &&
+        !_isLoading) {
+      _fetchDeals();
+    }
+  }
+
+  Future<void> _fetchDeals() async {
+    if (!_hasMore) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await WebFunctions().deals(
+        context: context,
+        status: 'active', // or 'all' depending on requirement, defaults to active usually
+        page: _page,
+      );
+
+      if (response.result) {
+        final data = response.response?['data'];
+        final List<dynamic> newDeals = data?['deals'] ?? data?['deal'] ?? [];
+        final Map<String, dynamic>? meta = response.response?['data'];
+        
+        // Check pagination
+        if (meta != null && meta['last_page'] != null) {
+             if (_page >= meta['last_page']) {
+                _hasMore = false;
+             }
+        } else if (newDeals.isEmpty) {
+            _hasMore = false;
+        }
+
+        if (mounted) {
+          setState(() {
+            _deals.addAll(newDeals);
+            _page++;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          // show error?
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching deals: $e");
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading && _deals.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_deals.isEmpty) {
+       return const Center(child: Text("No deals found"));
+    }
+
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _deals.length,
+      itemCount: _deals.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == _deals.length) {
+          return const Center(child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(),
+          ));
+        }
+
         final deal = _deals[index];
+        // Parse values
+        final String title = deal['title'] ?? 'No Title';
+        final String status = deal['account_stage']?['name'] ?? deal['status'] ?? 'Open'; // Adjust based on actual API
+        final String amount = deal['amount']?.toString() ?? '0.00'; // Make sure to format currency if needed
+        final String closingDate = deal['closing_date'] ?? 'N/A';
+        final String clientName = deal['client']?['client_name'] ?? 'N/A';
+
         return DealCard(
-          title: deal['title']!,
-          status: deal['status']!,
-          amount: deal['amount']!,
+          title: title,
+          status: status,
+          amount: amount,
+          clientName: clientName,
+          closingDate: closingDate,
         );
       },
     );
@@ -44,12 +130,16 @@ class DealCard extends StatelessWidget {
   final String title;
   final String status;
   final String amount;
+  final String clientName;
+  final String closingDate;
 
   const DealCard({
     Key? key,
     required this.title,
     required this.status,
     required this.amount,
+    required this.clientName,
+    required this.closingDate,
   }) : super(key: key);
 
   @override
@@ -123,7 +213,7 @@ class DealCard extends StatelessWidget {
           // Name And Status
           Row(
             children: [
-              const _InfoItem(label: 'Name', value: 'N/A'),
+              _InfoItem(label: 'Name', value: clientName),
               const Spacer(),
               _StatusChip(status: status),
             ],
@@ -134,7 +224,7 @@ class DealCard extends StatelessWidget {
           //  Close Date And Amount
           Row(
             children: [
-              const _InfoItem(label: 'Close Date', value: 'N/A'),
+              _InfoItem(label: 'Close Date', value: closingDate),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -209,22 +299,23 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isOpen = status.toLowerCase() == 'open';
+    // Basic logic for color, can be improved with map
+    final bool isOpen = status.toLowerCase() != 'closed' && status.toLowerCase() != 'lost';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: isOpen
             ? const Color(0xFF2A7DE1)
-            : const Color(0xFFFFFFFF),
+            : const Color(0xFF888888), // Grey for closed/lost
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         status,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: isOpen ? const Color(0xFFffffff) : const Color(0xFFffffff),
+          color: Colors.white,
         ),
       ),
     );

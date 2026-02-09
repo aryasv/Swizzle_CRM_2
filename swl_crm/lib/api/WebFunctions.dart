@@ -1631,6 +1631,116 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> deals({
+    required BuildContext context,
+    required String status, // active / inactive
+    required int page,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "status": status,
+      "page": page,
+    };
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(
+        result: false,
+        error: "Authentication required. Please log in again.",
+      );
+    }
+
+    print("✅ Deals API - Calling deals endpoint with status: $status, page: $page");
+
+    return await callApiFunction(
+      context,
+      "deals",
+      datadict,
+    );
+  }
+
+  Future<ApiResponse> dealDetails({
+    required BuildContext context,
+    required String dealUuid,
+    required int dealId,
+  }) async {
+    final Map<String, dynamic> data = {
+      "deal_id": dealId,
+    };
+
+    return await callApiFunction(
+      context,
+      "deal/$dealUuid/view",
+      data,
+    );
+  }
+
+  Future<ApiResponse> storeDeal({
+    required BuildContext context,
+    required String title,
+    required int companyId,
+    required int clientId,
+    required int accountStageId,
+    required double amount,
+    required String closingDate,
+    String? description,
+    String? customField153, // Dev completion date
+    List<int> assignedUsers = const [],
+    List<Map<String, dynamic>> products = const [],
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "title": title,
+      "company_id": companyId,
+      "client_id": clientId,
+      "account_stage_id": accountStageId,
+      "amount": amount,
+      "closing_date": closingDate,
+      "description": description,
+      "custom_field_153": customField153,
+      "assigned_users": assignedUsers,
+      "products": products,
+    };
+
+    datadict.removeWhere((key, value) => value == null);
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(result: false, error: "Authentication required. Please log in again.");
+    }
+
+    print("Store Deal API - Creating deal: $title");
+
+    return await callApiFunction(
+      context,
+      "deal/store",
+      datadict,
+    );
+  }
+
+  Future<ApiResponse> deleteDeal({
+    required BuildContext context,
+    required String dealUuid,
+    required int dealId,
+    String action = "deactivate",
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "deal_id": dealId,
+      "action": action,
+    };
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(result: false, error: "Authentication required. Please log in again.");
+    }
+
+    print("Delete Deal API - Action: $action on deal: $dealUuid");
+
+    return await callApiFunction(
+      context,
+      "deal/$dealUuid/delete",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> dashboard({
     required BuildContext context,
   }) async {
