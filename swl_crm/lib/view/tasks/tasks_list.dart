@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/tasks_model.dart';
+import 'package:swl_crm/view/tasks/task_details_page.dart';
 
 class TasksList extends StatelessWidget {
   final List<TaskModel> tasks;
@@ -54,138 +55,153 @@ class _TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isCompleted = task.isCompleted;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title And menu
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  task.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              PopupMenuButton<String>(
-                padding: EdgeInsets.zero,
-                onSelected: (value) async {
-                  if (value == 'edit') {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TasksFormPage(
-                          taskUuid: task.uuid,
-                          taskId: task.id,
-                        ),
-                      ),
-                    );
-                    
-                    if (result == true) {
-                      onRefresh();
-                    }
-                  } else if (value == 'deactivate') {
-                    _updateStatus(context, 'deactivate');
-                  } else if (value == 'activate') {
-                    _updateStatus(context, 'activate');
-                  }
-                },
-                child: const Icon(Icons.more_vert, size: 22),
-                itemBuilder: (context) {
-                  if (isActive) {
-                    return const [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Text('Edit'),
-                      ),
-                      PopupMenuItem(
-                        value: 'deactivate',
-                        child: Text('Deactivate'),
-                      ),
-                    ];
-                  } else {
-                    return const [
-                      PopupMenuItem(
-                        value: 'activate',
-                        child: Text('Activate'),
-                      ),
-                    ];
-                  }
-                },
-              ),
-            ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TaskDetailsPage(
+              taskId: task.id,
+              taskUuid: task.uuid,
+            ),
           ),
-
-
-
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
-
-          if (task.relatedTo.isNotEmpty) ...[
+        );
+        onRefresh();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 8),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title And menu
             Row(
               children: [
-                const Icon(Icons.link, size: 14, color: Colors.grey),
-                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    task.relatedTo,
+                    task.title,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                ),
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  onSelected: (value) async {
+                    if (value == 'edit') {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TasksFormPage(
+                            taskUuid: task.uuid,
+                            taskId: task.id,
+                          ),
+                        ),
+                      );
+                      
+                      if (result == true) {
+                        onRefresh();
+                      }
+                    } else if (value == 'deactivate') {
+                      _updateStatus(context, 'deactivate');
+                    } else if (value == 'activate') {
+                      _updateStatus(context, 'activate');
+                    }
+                  },
+                  child: const Icon(Icons.more_vert, size: 22),
+                  itemBuilder: (context) {
+                    if (isActive) {
+                      return const [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        PopupMenuItem(
+                          value: 'deactivate',
+                          child: Text('Deactivate'),
+                        ),
+                      ];
+                    } else {
+                      return const [
+                        PopupMenuItem(
+                          value: 'activate',
+                          child: Text('Activate'),
+                        ),
+                      ];
+                    }
+                  },
                 ),
               ],
             ),
 
-          ],
 
-          const SizedBox(height: 8),
-          // Due date And status
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 14, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(
-                task.dueDate,
-                style: const TextStyle(color: Colors.grey),
+
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+
+            if (task.relatedTo.isNotEmpty) ...[
+              Row(
+                children: [
+                  const Icon(Icons.link, size: 14, color: Colors.grey),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      task.relatedTo,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              _StatusChip(isCompleted: isCompleted),
+
             ],
-          ),
 
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
+            // Due date And status
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  task.dueDate,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(width: 10),
+                _StatusChip(isCompleted: isCompleted),
+              ],
+            ),
 
-          const Text(
-            'Assigned To',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey,
+            const SizedBox(height: 8),
+
+            const Text(
+              'Assigned To',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            task.assignedTo,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 4),
+            Text(
+              task.assignedTo,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

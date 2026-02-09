@@ -1,38 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/task_details_model.dart';
+import 'package:swl_crm/view/tasks/tasks_form_page.dart';
 
 class TaskDetailsPage extends StatefulWidget {
-  const TaskDetailsPage({super.key});
+  final int taskId;
+  final String taskUuid;
+
+  const TaskDetailsPage({
+    super.key,
+    required this.taskId,
+    required this.taskUuid,
+  });
 
   @override
   State<TaskDetailsPage> createState() => _TaskDetailsPageState();
 }
 
 class _TaskDetailsPageState extends State<TaskDetailsPage> {
+  TaskDetailsModel? task;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _testApi();
+    _loadTask();
   }
 
-  Future<void> _testApi() async {
+  Future<void> _loadTask() async {
     final api = WebFunctions();
 
     final response = await api.taskDetails(
       context: context,
-      taskUuid: "TASK_UUID",
-      taskId: 69,
+      taskUuid: widget.taskUuid,
+      taskId: widget.taskId,
     );
 
     if (!mounted) return;
 
     if (response.result) {
-      debugPrint("Task Details API RESPONSE:");
-      debugPrint(response.response.toString());
+      try {
+        final data = response.response!['data'];
+        if (data.containsKey('task')) {
+             task = TaskDetailsModel.fromJson(data['task']);
+        } else {
+             task = TaskDetailsModel.fromJson(data);
+        }
+      } catch (e) {
+        debugPrint("Error parsing task details: $e");
+      }
     } else {
-      debugPrint("Task Details API ERROR:");
-      debugPrint(response.error);
+      debugPrint("Task Details API ERROR: ${response.error}");
+    }
+
+    setState(() => isLoading = false);
+  }
+  
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(dateStr);
+      return DateFormat('MMM dd, yyyy').format(dateTime);
+    } catch (e) {
+      return dateStr;
     }
   }
 
@@ -53,9 +84,21 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.more_vert, size: 22),
                 offset: const Offset(0, 40),
-                onSelected: (value) {
-                  if (value == 'edit') {
+                onSelected: (value) async {
+                  if (value == 'edit' && task != null) {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TasksFormPage(
+                          taskId: widget.taskId,
+                          taskUuid: widget.taskUuid,
+                        ),
+                      ),
+                    );
 
+                    if (result == true) {
+                      _loadTask();
+                    }
                   }
                 },
                 itemBuilder: (context) => const [
@@ -75,56 +118,70 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
           ),
 
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
-              child: Column(
-                children: [
-                  _taskHeader(),
-                  const SizedBox(height: 16),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : task == null
+                    ? const Center(child: Text('Failed to load task'))
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 72),
+                        child: Column(
+                          children: [
+                            _taskHeader(task!),
+                            const SizedBox(height: 16),
 
-                  _section(
-                    title: 'Basic Information',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.task_alt, 'Task Name', '6th task update'),
-                      _infoRow(Icons.event, 'Due Date', '2026-02-03 00:00:00'),
-                    ],
-                  ),
+                            _section(
+                              title: 'Basic Information',
+                              icon: Icons.info_outline,
+                              children: [
+                                _infoRow(Icons.task_alt, 'Task Name', task!.name),
+                                _infoRow(
+                                  Icons.event, 
+                                  'Due Date', 
+                                  _formatDate(task!.dueDate),
+                                  valueColor: Colors.red,
+                                ),
+                              ],
+                            ),
 
-                  const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                  _section(
-                    title: 'Description',
-                    icon: Icons.description_outlined,
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          '6th additional information',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
+                            _section(
+                              title: 'Description',
+                              icon: Icons.description_outlined,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      task!.description.isNotEmpty ? task!.description : 'No description',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            _section(
+                              title: 'Other Information',
+                              icon: Icons.info_outline,
+                              children: [
+                                _infoRow(Icons.access_time, 'Created At', _formatDate(task!.createdAt)),
+                                _infoRow(Icons.update, 'Updated At', _formatDate(task!.updatedAt)),
+                                if (task!.relatedDisplay.isNotEmpty)
+                                  _infoRow(Icons.link, 'Related To', task!.relatedDisplay),
+                                _infoRow(Icons.priority_high, 'Priority', task!.isHighPriority ? 'High' : 'Normal'),
+                                _infoRow(Icons.repeat, 'Recurring', task!.recurring ? 'Yes' : 'No'),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _section(
-                    title: 'Other Information',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.access_time, 'Created At', 'Feb 03, 2026'),
-                      _infoRow(Icons.update, 'Updated At', 'Feb 03, 2026'),
-                      _infoRow(Icons.link, 'Related To', '1'),
-                      _infoRow(Icons.priority_high, 'Mark as High Priority', '1'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -132,7 +189,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
   }
 
 
-  Widget _taskHeader() {
+  Widget _taskHeader(TaskDetailsModel t) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -154,10 +211,10 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '6th task update',
-                  style: TextStyle(
+                  t.name,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -170,9 +227,11 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
 
           Row(
             children: [
-              _statusChip('Overdue', Colors.red.shade100, Colors.red),
-              const SizedBox(width: 8),
-              _statusChip('HIGH PRIORITY', Colors.red.shade100, Colors.red),
+              _StatusChip(isCompleted: t.isCompleted),
+              if (t.isHighPriority) ...[
+                const SizedBox(width: 8),
+                _priorityChip(),
+              ]
             ],
           ),
 
@@ -183,7 +242,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
           _metaRow(
             icon: Icons.person_outline,
             label: 'Assigned To',
-            value: 'Jeena Elizabeth',
+            value: t.assignedTo,
           ),
 
           const SizedBox(height: 8),
@@ -191,7 +250,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
           _metaRow(
             icon: Icons.calendar_today,
             label: 'Due Date',
-            value: 'Feb 03, 2026',
+            value: _formatDate(t.dueDate),
             valueColor: Colors.red,
           ),
         ],
@@ -233,10 +292,16 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
   }
 
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(
+    IconData icon, 
+    String label, 
+    String value, {
+    Color valueColor = Colors.black,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 18, color: const Color(0xFF2A7DE1)),
           const SizedBox(width: 12),
@@ -244,16 +309,21 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
             width: MediaQuery.of(context).size.width * 0.35,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
+                color: valueColor,
               ),
             ),
           ),
@@ -275,7 +345,11 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(fontSize: 13, color: Colors.grey),
+          style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -292,25 +366,23 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     );
   }
 
-
-  Widget _statusChip(String text, Color bg, Color fg) {
+  Widget _priorityChip() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: bg,
+        color: Colors.red.shade100,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        text,
+      child: const Text(
+        'HIGH PRIORITY',
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: fg,
+          color: Colors.red,
         ),
       ),
     );
   }
-
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
@@ -319,6 +391,33 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
       boxShadow: const [
         BoxShadow(color: Colors.black12, blurRadius: 6),
       ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final bool isCompleted;
+
+  const _StatusChip({required this.isCompleted});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isCompleted
+            ? const Color(0xFFE7F4EA)
+            : const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        isCompleted ? 'COMPLETED' : 'PENDING',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: isCompleted ? Colors.green : Colors.grey,
+        ),
+      ),
     );
   }
 }
