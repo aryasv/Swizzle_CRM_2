@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/deal_details_model.dart';
+import 'package:swl_crm/view/models/deals_model.dart';
 import 'package:intl/intl.dart';
 
 class DealFormPage extends StatefulWidget {
   final DealDetailsModel? deal;
+  final DealModel? dealSummary;
   final int? dealId;
   final String? dealUuid;
 
   const DealFormPage({
     super.key,
     this.deal,
+    this.dealSummary,
     this.dealId,
     this.dealUuid,
   });
@@ -44,9 +47,9 @@ class _DealFormPageState extends State<DealFormPage> {
   ];
 
   bool _isLoading = false;
-  bool _isInitializing = true;
+  bool _isFetchingDetails = true; // Renamed from _isInitializing
 
-  bool get _isEditMode => widget.deal != null || (widget.dealId != null && widget.dealUuid != null);
+  bool get _isEditMode => widget.deal != null || widget.dealSummary != null || (widget.dealId != null && widget.dealUuid != null);
   DealDetailsModel? _fetchedDeal;
   DealDetailsModel? get _currentDeal => widget.deal ?? _fetchedDeal;
 
@@ -57,22 +60,50 @@ class _DealFormPageState extends State<DealFormPage> {
   }
 
   Future<void> _initData() async {
-    await _fetchDropdownData();
+    // Immediate pre-fill if data is available
     if (_isEditMode) {
       if (widget.deal != null) {
         _populateFormData(widget.deal!);
-      } else if (widget.dealId != null && widget.dealUuid != null) {
-        await _fetchDealDetails();
+        _isFetchingDetails = false;
+      } else if (widget.dealSummary != null) {
+        _populateFormSummary(widget.dealSummary!);
+
       }
+    } else {
+        _isFetchingDetails = false;
     }
+
+
+    await Future.wait([
+        _fetchDropdownData(),
+        if (_isEditMode && widget.deal == null) _fetchDealDetails(),
+    ]);
+
+    if (mounted) {
+        setState(() {
+            _isFetchingDetails = false;
+        });
+    }
+  }
+
+  void _populateFormSummary(DealModel summary) {
+      _dealName.text = summary.title;
+      _amount.text = summary.amount.replaceAll(',', '');
+      _closingDate = summary.closingDate;
+      // We don't have IDs in summary, so dropdowns will be empty until details fetch finishes
   }
 
   Future<void> _fetchDealDetails() async {
     try {
+        final String uuid = widget.dealUuid ?? widget.dealSummary?.uuid ?? '';
+        final int id = widget.dealId ?? widget.dealSummary?.id ?? 0;
+
+        if (uuid.isEmpty || id == 0) return;
+
         final response = await WebFunctions().dealDetails(
             context: context,
-            dealUuid: widget.dealUuid!,
-            dealId: widget.dealId!,
+            dealUuid: uuid,
+            dealId: id,
         );
         if (mounted && response.result && response.response != null) {
             final detailsResponse = DealDetailsResponse.fromJson(response.response!);
@@ -128,12 +159,10 @@ class _DealFormPageState extends State<DealFormPage> {
               contactsResponse.response?['data']?['clients'] ?? []
             );
           }
-          _isInitializing = false;
         });
       }
     } catch (e) {
       debugPrint("Error fetching dropdown data: $e");
-      if (mounted) setState(() => _isInitializing = false);
     }
   }
 
@@ -157,8 +186,8 @@ class _DealFormPageState extends State<DealFormPage> {
       
       if (_isEditMode) {
 
-        final String uuid = _currentDeal?.uuid ?? widget.dealUuid!;
-        final int id = _currentDeal?.id ?? widget.dealId!;
+        final String uuid = _currentDeal?.uuid ?? widget.dealUuid ?? widget.dealSummary?.uuid ?? '';
+        final int id = _currentDeal?.id ?? widget.dealId ?? widget.dealSummary?.id ?? 0;
 
         response = await WebFunctions().updateDeal(
           context: context,
@@ -215,11 +244,6 @@ class _DealFormPageState extends State<DealFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitializing) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -230,6 +254,9 @@ class _DealFormPageState extends State<DealFormPage> {
             title: _isEditMode ? 'Edit Deal' : 'Create Deal',
             showBack: true,
           ),
+          
+          if (_isFetchingDetails)
+            const LinearProgressIndicator(minHeight: 2, color: Color(0xFF2A7DE1)),
 
           Expanded(
             child: SingleChildScrollView(
@@ -439,10 +466,14 @@ class _DealFormPageState extends State<DealFormPage> {
     final uniqueItems = <int>{};
     final distinctItems = items.where((item) => uniqueItems.add(item[idKey])).toList();
 
+
+    final bool valueExists = value == null || distinctItems.any((element) => element[idKey] == value);
+    final int? safeValue = valueExists ? value : null;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: DropdownButtonFormField<int>(
-        value: value,
+        value: safeValue,
         hint: Text(hint),
         items: distinctItems.map((e) {
           return DropdownMenuItem<int>(
@@ -500,3 +531,4 @@ class _DealFormPageState extends State<DealFormPage> {
     );
   }
 }
+

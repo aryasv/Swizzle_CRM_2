@@ -132,6 +132,7 @@ class _DealsListState extends State<DealsList> {
                       builder: (context) => DealFormPage(
                           dealId: deal.id,
                           dealUuid: deal.uuid,
+                          dealSummary: deal,
                       ),
                   ),
               );
