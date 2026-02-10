@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/deals_model.dart';
+import 'package:swl_crm/view/deals/deal_details_page.dart';
 
 class DealsList extends StatefulWidget {
   const DealsList({super.key});
@@ -105,12 +106,25 @@ class _DealsListState extends State<DealsList> {
 
         final deal = _deals[index];
 
-        return DealCard(
-          title: deal.title,
-          status: deal.stageName.isNotEmpty ? deal.stageName : deal.status,
-          amount: deal.amount,
-          clientName: deal.clientName,
-          closingDate: deal.closingDate,
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DealDetailsPage(
+                  dealId: deal.id,
+                  dealUuid: deal.uuid,
+                ),
+              ),
+            );
+          },
+          child: DealCard(
+            title: deal.title,
+            status: deal.stageName.isNotEmpty ? deal.stageName : deal.status,
+            amount: deal.amount,
+            clientName: deal.clientName,
+            closingDate: deal.closingDate,
+          ),
         );
       },
     );

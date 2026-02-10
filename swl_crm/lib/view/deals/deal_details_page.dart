@@ -1,41 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/deal_details_model.dart';
 
 class DealDetailsPage extends StatefulWidget {
-  const DealDetailsPage({super.key});
+  final int dealId;
+  final String dealUuid;
+
+  const DealDetailsPage({
+    super.key,
+    required this.dealId,
+    required this.dealUuid,
+  });
 
   @override
   State<DealDetailsPage> createState() => _DealDetailsPageState();
 }
 
 class _DealDetailsPageState extends State<DealDetailsPage> {
+  bool _isLoading = true;
+  DealDetailsModel? _deal;
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _testApi();
+    _fetchDealDetails();
   }
 
-  Future<void> _testApi() async {
-    final api = WebFunctions();
+  Future<void> _fetchDealDetails() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-    final response = await api.dealDetails(
-      context: context,
-      dealUuid: "PUT_DEAL_UUID_HERE",
-      dealId: 25,
-    );
+    try {
+      final response = await WebFunctions().dealDetails(
+        context: context,
+        dealUuid: widget.dealUuid,
+        dealId: widget.dealId,
+      );
 
-    if (!mounted) return;
-
-    if (response.result) {
-      debugPrint("Deal Details API RESPONSE:");
-      debugPrint(response.response.toString());
-    } else {
-      debugPrint("Deal Details API ERROR:");
-      debugPrint(response.error);
+      if (mounted) {
+        if (response.result && response.response != null) {
+          final detailsResponse = DealDetailsResponse.fromJson(response.response!);
+          setState(() {
+            _deal = detailsResponse.deal;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = response.error;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +70,6 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-
           // APPBAR
           CustomAppBar(
             title: 'Deal Details',
@@ -59,44 +85,49 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
           ),
 
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 60),
-              child: Column(
-                children: [
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage.isNotEmpty
+                    ? Center(child: Text(_errorMessage))
+                    : _deal == null
+                        ? const Center(child: Text("Deal not found"))
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 60),
+                            child: Column(
+                              children: [
+                                // HEADER
+                                _header(_deal!),
 
-                  // HEADER
-                  _header(),
+                                const SizedBox(height: 16),
 
-                  const SizedBox(height: 16),
+                                // BASIC INFO
+                                _section(
+                                  title: 'Basic Info',
+                                  icon: Icons.info_outline,
+                                  children: [
+                                    _infoRow(Icons.person_outline, 'Contact', _deal!.clientName, isLink: true),
+                                    _infoRow(Icons.business_outlined, 'Company', _deal!.companyId.toString()), // TODO: Fetch company name if available
+                                    _infoRow(Icons.currency_rupee, 'Amount', '${_deal!.currency} ${_deal!.amount}'),
+                                    _infoRow(Icons.calendar_month, 'Closing Date', _deal!.closingDate),
+                                    // _infoRow(Icons.person_outline, 'Assigned To', 'Kiran Karma'), // TODO: Add assigned user if available
+                                    _infoRow(Icons.flag_outlined, 'Status', _deal!.status),
+                                  ],
+                                ),
 
-                  // BASIC INFO
-                  _section(
-                    title: 'Basic Info',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.person_outline, 'Contact', 'Lekshmi s Kumar', isLink: true),
-                      _infoRow(Icons.business_outlined, 'Company', 'Swizzle'),
-                      _infoRow(Icons.currency_rupee, 'Amount', '₹ 25,000.00'),
-                      _infoRow(Icons.calendar_month, 'Closing Date', '02/19/2026'),
-                      _infoRow(Icons.person_outline, 'Assigned To', 'Kiran Karma'),
-                      _infoRow(Icons.flag_outlined, 'Status', 'Open'),
-                    ],
-                  ),
+                                const SizedBox(height: 16),
 
-                  const SizedBox(height: 16),
-
-                  // AUDIT
-                  _section(
-                    title: 'Audit',
-                    icon: Icons.history,
-                    children: [
-                      _infoRow(Icons.person_add_alt, 'Created', 'Unknown'),
-                      _infoRow(Icons.update, 'Updated', 'Unknown'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                                // AUDIT
+                                _section(
+                                  title: 'Audit',
+                                  icon: Icons.history,
+                                  children: [
+                                    _infoRow(Icons.person_add_alt, 'Created', 'Unknown'),
+                                    _infoRow(Icons.update, 'Updated', 'Unknown'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
           ),
         ],
       ),
@@ -104,7 +135,7 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
   }
 
   // HEADER CARD
-  Widget _header() {
+  Widget _header(DealDetailsModel deal) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -124,9 +155,9 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Deal - Deal For Swizzle',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                Text(
+                  deal.title,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 6),
                 Container(
@@ -135,9 +166,9 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
                     color: Colors.green,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Open',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  child: Text(
+                    deal.status,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
@@ -184,14 +215,14 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.grey),
+          Icon(icon, size: 18, color: Colors.grey,),
           const SizedBox(width: 12),
 
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.35,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: const TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
             ),
           ),
 
