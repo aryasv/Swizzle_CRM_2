@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/deal_details_model.dart';
+import 'package:swl_crm/api/WebFunctions.dart';
+import 'package:swl_crm/view/deals/deal_form_page.dart';
 
 class DealDetailsPage extends StatefulWidget {
   final int dealId;
@@ -77,6 +79,20 @@ class _DealDetailsPageState extends State<DealDetailsPage> {
             rightAction1: PopupMenuButton<String>(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.more_vert, size: 22),
+              onSelected: (value) async {
+                if (value == 'edit' && _deal != null) {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DealFormPage(deal: _deal),
+                    ),
+                  );
+                  
+                  if (result == true) {
+                    _fetchDealDetails();
+                  }
+                }
+              },
               itemBuilder: (context) => const [
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
                 PopupMenuItem(value: 'delete', child: Text('Delete')),

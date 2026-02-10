@@ -1717,6 +1717,51 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> updateDeal({
+    required BuildContext context,
+    required String dealUuid,
+    required int dealId,
+    required String title,
+    required int companyId,
+    required int clientId,
+    required int accountStageId,
+    required double amount,
+    required String closingDate,
+    String? description,
+    String? customField153, // Dev completion date
+    List<int> assignedUsers = const [],
+    List<Map<String, dynamic>> products = const [],
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "deal_id": dealId,
+      "title": title,
+      "company_id": companyId,
+      "client_id": clientId,
+      "account_stage_id": accountStageId,
+      "amount": amount,
+      "closing_date": closingDate,
+      "description": description,
+      "custom_field_153": customField153,
+      "assigned_users": assignedUsers,
+      "products": products,
+    };
+
+    datadict.removeWhere((key, value) => value == null);
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(result: false, error: "Authentication required. Please log in again.");
+    }
+
+    print("Update Deal API - Updating deal: $title (UUID: $dealUuid)");
+
+    return await callApiFunction(
+      context,
+      "deal/$dealUuid/update",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> deleteDeal({
     required BuildContext context,
     required String dealUuid,

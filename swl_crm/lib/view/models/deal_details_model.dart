@@ -31,6 +31,8 @@ class DealDetailsModel {
   final int companyId;
   final int accountStageId;
   final int accountId;
+  final String? description;
+  final String? customField153;
 
   DealDetailsModel({
     required this.id,
@@ -45,6 +47,8 @@ class DealDetailsModel {
     required this.companyId,
     required this.accountStageId,
     required this.accountId,
+    this.description,
+    this.customField153,
   });
 
   factory DealDetailsModel.fromJson(Map<String, dynamic> json) {
@@ -61,6 +65,8 @@ class DealDetailsModel {
       companyId: json['company_id'] ?? 0,
       accountStageId: json['account_stage_id'] ?? 0,
       accountId: json['account_id'] ?? 0,
+      description: json['description'],
+      customField153: json['custom_field_153'],
     );
   }
 }

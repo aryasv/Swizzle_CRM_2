@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/deal_details_model.dart';
+import 'package:intl/intl.dart';
 
 class DealFormPage extends StatefulWidget {
-  const DealFormPage({super.key});
+  final DealDetailsModel? deal;
+  final int? dealId;
+  final String? dealUuid;
+
+  const DealFormPage({
+    super.key,
+    this.deal,
+    this.dealId,
+    this.dealUuid,
+  });
 
   @override
   State<DealFormPage> createState() => _DealFormPageState();
@@ -35,10 +46,61 @@ class _DealFormPageState extends State<DealFormPage> {
   bool _isLoading = false;
   bool _isInitializing = true;
 
+  bool get _isEditMode => widget.deal != null || (widget.dealId != null && widget.dealUuid != null);
+  DealDetailsModel? _fetchedDeal;
+  DealDetailsModel? get _currentDeal => widget.deal ?? _fetchedDeal;
+
   @override
   void initState() {
     super.initState();
-    _fetchDropdownData();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await _fetchDropdownData();
+    if (_isEditMode) {
+      if (widget.deal != null) {
+        _populateFormData(widget.deal!);
+      } else if (widget.dealId != null && widget.dealUuid != null) {
+        await _fetchDealDetails();
+      }
+    }
+  }
+
+  Future<void> _fetchDealDetails() async {
+    try {
+        final response = await WebFunctions().dealDetails(
+            context: context,
+            dealUuid: widget.dealUuid!,
+            dealId: widget.dealId!,
+        );
+        if (mounted && response.result && response.response != null) {
+            final detailsResponse = DealDetailsResponse.fromJson(response.response!);
+            setState(() {
+                _fetchedDeal = detailsResponse.deal;
+            });
+            if (_fetchedDeal != null) {
+                _populateFormData(_fetchedDeal!);
+            }
+        }
+    } catch (e) {
+        debugPrint("Error fetching deal details for edit: $e");
+    }
+  }
+
+  void _populateFormData(DealDetailsModel deal) {
+    _dealName.text = deal.title;
+    _amount.text = deal.amount.replaceAll(',', '');
+    _description.text = deal.description ?? ''; 
+    
+    setState(() {
+        _companyId = deal.companyId != 0 ? deal.companyId : null;
+        _contactId = deal.clientId != 0 ? deal.clientId : null;
+        _stageId = deal.accountStageId != 0 ? deal.accountStageId : null;
+        
+        _closingDate = deal.closingDate;
+        _devCompletionDate = deal.customField153;
+    });
   }
 
   Future<void> _fetchDropdownData() async {
@@ -91,23 +153,44 @@ class _DealFormPageState extends State<DealFormPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await WebFunctions().storeDeal(
-        context: context,
-        title: _dealName.text,
-        companyId: _companyId!,
-        clientId: _contactId!,
-        accountStageId: _stageId!,
-        amount: double.tryParse(_amount.text) ?? 0.0,
-        closingDate: _closingDate!, // Ensure format matches API expectation
-        description: _description.text,
-        customField153: _devCompletionDate,
-        // Optional: assignedUsers, products
-      );
+      ApiResponse response;
+      
+      if (_isEditMode) {
+
+        final String uuid = _currentDeal?.uuid ?? widget.dealUuid!;
+        final int id = _currentDeal?.id ?? widget.dealId!;
+
+        response = await WebFunctions().updateDeal(
+          context: context,
+          dealUuid: uuid,
+          dealId: id,
+          title: _dealName.text,
+          companyId: _companyId!,
+          clientId: _contactId!,
+          accountStageId: _stageId!,
+          amount: double.tryParse(_amount.text) ?? 0.0,
+          closingDate: _closingDate!,
+          description: _description.text,
+          customField153: _devCompletionDate,
+        );
+      } else {
+        response = await WebFunctions().storeDeal(
+          context: context,
+          title: _dealName.text,
+          companyId: _companyId!,
+          clientId: _contactId!,
+          accountStageId: _stageId!,
+          amount: double.tryParse(_amount.text) ?? 0.0,
+          closingDate: _closingDate!,
+          description: _description.text,
+          customField153: _devCompletionDate,
+        );
+      }
 
       if (response.result) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Deal created successfully")),
+            SnackBar(content: Text(_isEditMode ? "Deal updated successfully" : "Deal created successfully")),
           );
           Navigator.pop(context, true); // Return true to trigger refresh
         }
@@ -119,7 +202,7 @@ class _DealFormPageState extends State<DealFormPage> {
         }
       }
     } catch (e) {
-      debugPrint("Error creating deal: $e");
+      debugPrint("Error submitting deal: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("An error occurred")),
@@ -143,8 +226,8 @@ class _DealFormPageState extends State<DealFormPage> {
       body: Column(
         children: [
           /// APP BAR
-          const CustomAppBar(
-            title: 'Create Deal',
+          CustomAppBar(
+            title: _isEditMode ? 'Edit Deal' : 'Create Deal',
             showBack: true,
           ),
 
@@ -211,7 +294,9 @@ class _DealFormPageState extends State<DealFormPage> {
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
+                        initialDate: _closingDate != null 
+                            ? DateFormat('MM/dd/yyyy').parse(_closingDate!) 
+                            : DateTime.now(),
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
                       );
@@ -252,7 +337,9 @@ class _DealFormPageState extends State<DealFormPage> {
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
+                        initialDate: _devCompletionDate != null 
+                            ? DateFormat('MM/dd/yyyy').parse(_devCompletionDate!) 
+                            : DateTime.now(),
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
                       );
@@ -294,9 +381,9 @@ class _DealFormPageState extends State<DealFormPage> {
                   width: 20, 
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                 ) 
-              : const Text(
-                  'Create Deal',
-                  style: TextStyle(
+              : Text(
+                  _isEditMode ? 'Update Deal' : 'Create Deal',
+                  style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     color: Colors.white

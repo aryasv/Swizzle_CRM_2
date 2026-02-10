@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/deals_model.dart';
 import 'package:swl_crm/view/deals/deal_details_page.dart';
+import 'package:swl_crm/view/deals/deal_form_page.dart';
 
 class DealsList extends StatefulWidget {
   const DealsList({super.key});
@@ -124,6 +125,23 @@ class _DealsListState extends State<DealsList> {
             amount: deal.amount,
             clientName: deal.clientName,
             closingDate: deal.closingDate,
+            onEdit: () async {
+               final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => DealFormPage(
+                          dealId: deal.id,
+                          dealUuid: deal.uuid,
+                      ),
+                  ),
+              );
+              if (result == true) {
+                  _page = 1;
+                  _deals.clear();
+                  _hasMore = true;
+                  _fetchDeals();
+              }
+            },
           ),
         );
       },
@@ -137,6 +155,7 @@ class DealCard extends StatelessWidget {
   final String amount;
   final String clientName;
   final String closingDate;
+  final VoidCallback onEdit;
 
   const DealCard({
     Key? key,
@@ -145,6 +164,7 @@ class DealCard extends StatelessWidget {
     required this.amount,
     required this.clientName,
     required this.closingDate,
+    required this.onEdit,
   }) : super(key: key);
 
   @override
@@ -183,7 +203,11 @@ class DealCard extends StatelessWidget {
                 child: PopupMenuButton<String>(
                   padding: EdgeInsets.zero,
                   child: const Icon(Icons.more_vert, size: 24),
-                  onSelected: (value) {},
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                        onEdit();
+                    }
+                  },
                   itemBuilder: (context) => const [
                     PopupMenuItem(
                       value: 'edit',
