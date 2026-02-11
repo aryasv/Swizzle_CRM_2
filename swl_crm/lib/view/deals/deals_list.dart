@@ -143,10 +143,71 @@ class _DealsListState extends State<DealsList> {
                   _fetchDeals();
               }
             },
+            onDelete: () => _confirmDelete(deal),
           ),
         );
       },
     );
+  }
+
+  Future<void> _confirmDelete(DealModel deal) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Deal"),
+        content: const Text("Are you sure you want to delete this deal?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final response = await WebFunctions().deleteDeal(
+          context: context,
+          dealUuid: deal.uuid,
+          dealId: deal.id,
+        );
+
+        if (response.result) {
+            if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Deal deleted successfully")),
+                );
+                // Refresh list
+                _page = 1;
+                _deals.clear();
+                _hasMore = true;
+                _fetchDeals(); // logic handles loading state
+            }
+        } else {
+             if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(response.error)),
+                );
+                setState(() => _isLoading = false);
+            }
+        }
+      } catch (e) {
+          debugPrint("Error deleting deal: $e");
+          if (mounted) {
+             ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("An error occurred")),
+             );
+             setState(() => _isLoading = false);
+          }
+      }
+    }
   }
 }
 
@@ -157,6 +218,7 @@ class DealCard extends StatelessWidget {
   final String clientName;
   final String closingDate;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const DealCard({
     Key? key,
@@ -166,6 +228,7 @@ class DealCard extends StatelessWidget {
     required this.clientName,
     required this.closingDate,
     required this.onEdit,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
@@ -207,6 +270,8 @@ class DealCard extends StatelessWidget {
                   onSelected: (value) {
                     if (value == 'edit') {
                         onEdit();
+                    } else if (value == 'delete') {
+                        onDelete();
                     }
                   },
                   itemBuilder: (context) => const [
