@@ -21,6 +21,7 @@ class CompaniesDetailsPage extends StatefulWidget {
 class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
   CompanyDetailsModel? company;
   bool isLoading = true;
+  String _selectedTab = 'Basic Info';
 
   @override
   void initState() {
@@ -122,33 +123,118 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                   _companyHeader(company!),
                   const SizedBox(height: 16),
 
-                  _section(
-                    title: 'Company Information',
-                    icon: Icons.info_outline,
-                    children: [
-                      _infoRow(Icons.business, 'Company Name', company!.name),
-                      _infoRow(Icons.phone, 'Phone', company!.phone, isLink: true),
-                      _infoRow(Icons.language, 'Website', company!.website, isLink: true),
-                      _infoRow(Icons.email, 'Email', company!.email, isLink: true),
-                    ],
-                  ),
-
+                  _tabBar(),
                   const SizedBox(height: 16),
 
-                  _section(
-                    title: 'Address Information',
-                    icon: Icons.location_on_outlined,
-                    children: [
-                      _infoRow(Icons.location_city, 'Address', company!.address),
-                      _infoRow(Icons.location_city, 'City', company!.city),
-                      _infoRow(Icons.pin_drop, 'Zip', company!.zip),
-                    ],
-                  ),
+                  if (_selectedTab == 'Basic Info') ...[
+                    _section(
+                      title: 'Company Information',
+                      icon: Icons.info_outline,
+                      children: [
+                        _infoRow(Icons.business, 'Company Name', company!.name),
+                        _infoRow(Icons.phone, 'Phone', company!.phone, isLink: true),
+                        _infoRow(Icons.language, 'Website', company!.website, isLink: true),
+                        _infoRow(Icons.email, 'Email', company!.email, isLink: true),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _section(
+                      title: 'Address Information',
+                      icon: Icons.location_on_outlined,
+                      children: [
+                        _infoRow(Icons.location_city, 'Address', company!.address),
+                        _infoRow(Icons.location_city, 'City', company!.city),
+                        _infoRow(Icons.pin_drop, 'Zip', company!.zip),
+                      ],
+                    ),
+                  ] else ...[
+                     Container(
+                      padding: const EdgeInsets.all(32),
+                      alignment: Alignment.center,
+                      decoration: _cardDecoration(),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline, size: 48, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No ${_selectedTab.toLowerCase()} available',
+                            style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+
+
+  // TAB BAR
+  Widget _tabBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      decoration: _cardDecoration(),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            _buildTabItem('Basic Info', Icons.info_outline),
+            _buildTabItem('Notes', Icons.note_outlined),
+            _buildTabItem('Deals', Icons.monetization_on_outlined),
+            _buildTabItem('Tasks', Icons.check_circle_outline),
+            _buildTabItem('Contacts', Icons.contacts_outlined),
+            _buildTabItem('Company', Icons.business_outlined),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabItem(String label, IconData icon) {
+    bool isSelected = _selectedTab == label;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTab = label;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          border: isSelected
+              ? const Border(bottom: BorderSide(color: Color(0xFF2A7DE1), width: 2))
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? const Color(0xFF2A7DE1) : Colors.grey,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? const Color(0xFF2A7DE1) : Colors.grey,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
