@@ -1,182 +1,211 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/profile_model.dart';
+import 'package:swl_crm/api/WebFunctions.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _isLoading = true;
+  ProfileModel? _profile;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      final response = await WebFunctions().myProfile(context: context);
+      if (response.result && response.response != null) {
+        // Assuming the profile data is in 'data' key or directly in response
+        final data = response.response!['data'] ?? response.response!;
+        setState(() {
+          _profile = ProfileModel.fromJson(data);
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = response.error;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load profile: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      body: Column(
-        children: [
-
-          CustomAppBar(
-            title: 'My Profile',
-            showBack: true,
-            rightAction1: const Icon(Icons.edit_outlined, size: 20),
-            onRightAction1: () {
-              // edit profile (later)
-            },
-          ),
-
-          // Profile section
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: const [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: Color(0xFFE8F1FD),
-                  child: Text(
-                    'SJ',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2A7DE1),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Sarah Johnson',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'sarah.johnson@swlcrm.com',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Chip(
-                  label: Text(
-                    'Sales Manager',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF2A7DE1),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  backgroundColor: Color(0xFFE8F1FD),
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 16,),
-
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-
-                  // Personal Info
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Personal Information',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(_error, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _fetchProfile,
+                        child: const Text('Retry'),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                )
+              : _profile == null
+                  ? const Center(child: Text('No profile data found'))
+                  : Column(
+                      children: [
+                        CustomAppBar(
+                          title: 'My Profile',
+                          showBack: true,
+                        ),
 
-                  _InfoCard(
-                    icon: Icons.email_outlined,
-                    label: 'Email',
-                    value: 'sarah.johnson@swlcrm.com',
-                  ),
-                  _InfoCard(
-                    icon: Icons.phone_outlined,
-                    label: 'Phone',
-                    value: '+1-555-0101',
-                  ),
-                  _InfoCard(
-                    icon: Icons.apartment_outlined,
-                    label: 'Department',
-                    value: 'Sales',
-                  ),
-                  _InfoCard(
-                    icon: Icons.work_outline,
-                    label: 'Job Title',
-                    value: 'Sales Manager',
-                  ),
+                        // Profile section
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: const Color(0xFFE8F1FD),
+                                  child: Text(
+                                    _profile!.initials,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2A7DE1),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  _profile!.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _profile!.email,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Chip(
+                                  label: Text(
+                                    _profile!.role,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF2A7DE1),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  backgroundColor: const Color(0xFFE8F1FD),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
 
-                  const SizedBox(height: 20),
+                        const SizedBox(
+                          height: 4,
+                        ),
 
-                  //  About
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'About',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                        // Content
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 16),
 
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(0, 3),
+                                // Personal Info
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'Additional Information',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+
+                                _InfoCard(
+                                  icon: Icons.calendar_month_outlined,
+                                  label: 'Member Since',
+                                  value: _profile!.memberSince,
+                                ),
+                                _InfoCard(
+                                  icon: Icons.alarm_add_outlined,
+                                  label: 'Last Updated',
+                                  value: _profile!.lastUpdated,
+                                ),
+                                _InfoCard(
+                                  icon: Icons.apartment_outlined,
+                                  label: 'Organization',
+                                  value: _profile!.organization,
+                                ),
+                                if (_profile!.phone.isNotEmpty &&
+                                    _profile!.phone != 'N/A')
+                                  _InfoCard(
+                                    icon: Icons.phone_outlined,
+                                    label: 'Phone',
+                                    value: _profile!.phone,
+                                  ),
+
+                                const SizedBox(height: 20),
+
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    child: const Text(
-                      'Experienced sales professional with a proven track record '
-                          'in CRM solutions and client relationship management.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -216,6 +245,7 @@ class _InfoCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFE8F1FD),
               borderRadius: BorderRadius.circular(10),
+              // child: Icon is added below
             ),
             child: Icon(
               icon,

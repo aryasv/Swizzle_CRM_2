@@ -1814,6 +1814,26 @@ class WebFunctions {
       datadict,
     );
   }
+
+  Future<ApiResponse> myProfile({
+    required BuildContext context,
+  }) async {
+    final Map<String, dynamic> datadict = {};
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(
+          result: false, error: "Authentication required. Please log in again.");
+    }
+
+    print("✅ My Profile API - Fetching user profile");
+
+    return await callApiFunction(
+      context,
+      "my-profile",
+      datadict,
+    );
+  }
 }
 
 enum UrlType { swizzle, sucessd }
