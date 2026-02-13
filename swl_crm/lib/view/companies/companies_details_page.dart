@@ -57,9 +57,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
       backgroundColor: const Color(0xFFF5F5F5),
       floatingActionButton: _selectedTab == 'Notes'
           ? FloatingActionButton.extended(
-              onPressed: () {
-                
-              },
+              onPressed: _showAddNoteBottomSheet,
               backgroundColor: const Color(0xFF0D70E3), // Primary blue
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
@@ -378,6 +376,137 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
       boxShadow: const [
         BoxShadow(color: Colors.black12, blurRadius: 6),
       ],
+    );
+  }
+
+  void _showAddNoteBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Add Note',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Note Input
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextField(
+                          maxLines: 5,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your note here...',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Attachments Label
+                      const Text(
+                        'Attachments',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Attachment Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.image_outlined, color: Color(0xFF2A7DE1)),
+                              label: const Text('Gallery', style: TextStyle(color: Color(0xFF2A7DE1))),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF2A7DE1)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2A7DE1)),
+                              label: const Text('Camera', style: TextStyle(color: Color(0xFF2A7DE1))),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF2A7DE1)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Footer Button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 72),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                       Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D70E3),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Save Note',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
