@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
 import 'package:swl_crm/view/models/companies_model.dart';
+import 'package:swl_crm/view/companies/tabs/companies_notes_tab.dart';
 
 class CompaniesDetailsPage extends StatefulWidget {
   final int companyId;
@@ -54,6 +55,19 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
+      floatingActionButton: _selectedTab == 'Notes'
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                
+              },
+              backgroundColor: const Color(0xFF0D70E3), // Primary blue
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Add Note',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            )
+          : null,
       body: Column(
         children: [
           CustomAppBar(
@@ -149,6 +163,8 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                         _infoRow(Icons.pin_drop, 'Zip', company!.zip),
                       ],
                     ),
+                  ] else if (_selectedTab == 'Notes') ...[
+                     const CompaniesNotesTab(),
                   ] else ...[
                      Container(
                       padding: const EdgeInsets.all(32),
