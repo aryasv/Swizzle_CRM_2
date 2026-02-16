@@ -180,10 +180,7 @@ class _NoteItem extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
-                    child: const Icon(Icons.edit, size: 18, color: Colors.grey),
-                  ),
-                  const SizedBox(width: 16),
+
                   GestureDetector(
                     child: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                   ),
