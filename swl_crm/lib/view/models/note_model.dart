@@ -58,7 +58,7 @@ class AttachmentModel {
     return AttachmentModel(
       id: json['id'] ?? 0,
       fileName: json['file_name'] ?? '',
-      fileUrl: json['file_url'] ?? '',
+      fileUrl: json['image_path'] ?? '',
       fileSize: json['file_size'] ?? '',
       fileType: json['file_type'] ?? '',
     );

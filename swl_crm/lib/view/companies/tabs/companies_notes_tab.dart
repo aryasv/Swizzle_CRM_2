@@ -236,6 +236,55 @@ class _NoteItem extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => Dialog(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AppBar(
+                                title: Text(file.fileName),
+                                leading: IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                automaticallyImplyLeading: false,
+                              ),
+                              Flexible(
+                                child: InteractiveViewer(
+                                  child: Image.network(
+                                    file.fileUrl,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded /
+                                                  loadingProgress.expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) => const Padding(
+                                      padding: EdgeInsets.all(20.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                          SizedBox(height: 10),
+                                          Text('Unable to load image preview'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                     child: const Icon(Icons.remove_red_eye_outlined, size: 20, color: Colors.grey),
                   ),
                   const SizedBox(width: 12),
