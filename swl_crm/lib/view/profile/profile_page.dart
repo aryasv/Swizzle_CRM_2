@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/profile_model.dart';
-import 'package:swl_crm/api/WebFunctions.dart';
+import 'package:swl_crm/api/web_functions.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

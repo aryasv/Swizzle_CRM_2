@@ -3,7 +3,7 @@
 
 //Folder > lib > api
 export 'package:swl_crm/api/AppSignatureAPI.dart';
-export 'package:swl_crm/api/WebFunctions.dart';
+export 'package:swl_crm/api/web_functions.dart';
 
 //Folder > Bottom Nav Classes
 export 'package:swl_crm/view/bottom_nav/bottom_navigation.dart';

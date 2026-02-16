@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
 import 'package:swl_crm/view/models/companies_model.dart';
@@ -383,6 +385,8 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
   void _showAddNoteBottomSheet() {
     final noteController = TextEditingController();
     bool isSaving = false;
+    List<XFile> attachments = [];
+    final ImagePicker picker = ImagePicker();
 
     showModalBottomSheet(
       context: context,
@@ -391,6 +395,22 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            
+            Future<void> pickImage(ImageSource source) async {
+              try {
+                final XFile? image = await picker.pickImage(source: source);
+                if (image != null) {
+                  setModalState(() {
+                    attachments.add(image);
+                  });
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to pick image')),
+                );
+              }
+            }
+
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
@@ -451,13 +471,60 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 12),
+
+                          // Selected Images List
+                          if (attachments.isNotEmpty)
+                            Container(
+                              height: 100,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: attachments.length,
+                                itemBuilder: (context, index) {
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        width: 100,
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          image: DecorationImage(
+                                            image: FileImage(File(attachments[index].path)),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 0,
+                                        right: 8,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setModalState(() {
+                                              attachments.removeAt(index);
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.black54,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
                           
                           // Attachment Buttons
                           Row(
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () {},
+                                  onPressed: () => pickImage(ImageSource.gallery),
                                   icon: const Icon(Icons.image_outlined, color: Color(0xFF2A7DE1)),
                                   label: const Text('Gallery', style: TextStyle(color: Color(0xFF2A7DE1))),
                                   style: OutlinedButton.styleFrom(
@@ -470,7 +537,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () {},
+                                  onPressed: () => pickImage(ImageSource.camera),
                                   icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2A7DE1)),
                                   label: const Text('Camera', style: TextStyle(color: Color(0xFF2A7DE1))),
                                   style: OutlinedButton.styleFrom(
@@ -497,9 +564,9 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                           ? null 
                           : () async {
                               final text = noteController.text.trim();
-                              if (text.isEmpty) {
+                              if (text.isEmpty && attachments.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter a note')),
+                                  const SnackBar(content: Text('Please enter a note or add an attachment')),
                                 );
                                 return;
                               }
@@ -507,12 +574,12 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                               setModalState(() => isSaving = true);
                               
                               final api = WebFunctions();
-                              // Assuming addCompanyNote is implemented in WebFunctions
                               final response = await api.addCompanyNote(
                                 context: context,
                                 companyUuid: widget.companyUuid,
                                 companyId: widget.companyId,
                                 note: text,
+                                attachments: attachments,
                               );
 
                               if (mounted) {

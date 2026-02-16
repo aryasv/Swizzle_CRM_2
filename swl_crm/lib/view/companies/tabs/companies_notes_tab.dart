@@ -47,7 +47,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
             _notes = notesData.map((e) => NoteModel.fromJson(e)).toList();
           }
         } 
-        
+
         else {
           if (rawData is Map && rawData.containsKey('data')) {
             rawData = rawData['data'];
