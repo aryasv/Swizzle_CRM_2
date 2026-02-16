@@ -1,63 +1,108 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
+import 'package:swl_crm/view/models/note_model.dart';
+import 'package:swl_crm/view/models/companies_details_model.dart';
+import 'package:intl/intl.dart';
 
 class CompaniesNotesTab extends StatefulWidget {
-  const CompaniesNotesTab({super.key});
+  final CompanyDetailsModel? company;
+  const CompaniesNotesTab({super.key, this.company});
 
   @override
   State<CompaniesNotesTab> createState() => _CompaniesNotesTabState();
 }
 
 class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
+  final WebFunctions _api = WebFunctions();
+  bool _isLoading = true;
+  List<NoteModel> _notes = [];
 
-  final List<Map<String, dynamic>> _staticNotes = [
-    {
-      'id': 1,
-      'userName': 'John',
-      'userInitials': 'SM',
-      'date': 'Feb 10, 2026 09:42 PM',
-      'note': 'Test',
-      'attachments': [],
-    },
-    {
-      'id': 2,
-      'userName': 'Ani',
-      'userInitials': 'AV',
-      'date': 'Feb 05, 2026 11:55 PM',
-      'note': 'Note',
-      'attachments': [],
-    },
-    {
-      'id': 3,
-      'userName': 'Vijay',
-      'userInitials': 'AV',
-      'date': 'Feb 05, 2026 10:00 PM',
-      'note': 'Test Note',
-      'attachments': [
-        {
-          'name': 'Frame 1 3.png',
-          'size': '357.10 KB',
-          'type': 'image',
-        },
-        {
-          'name': 'image (14) 1 1.png',
-          'size': '115.50 KB',
-          'type': 'image',
+  @override
+  void initState() {
+    super.initState();
+    _loadNotes();
+  }
+
+  Future<void> _loadNotes() async {
+    if (widget.company == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final response = await _api.getCompanyNotes(
+      context: context,
+      companyUuid: widget.company?.uuid ?? '',
+      companyId: widget.company?.id ?? 0,
+    );
+
+    if (mounted) {
+      if (response.result) {
+        var rawData = response.response!['data'];
+        
+        // Check for 'notes' key first (matches user logs)
+        if (rawData is Map && rawData.containsKey('notes')) {
+          final notesData = rawData['notes'];
+          if (notesData is List) {
+            _notes = notesData.map((e) => NoteModel.fromJson(e)).toList();
+          }
+        } 
+        
+        else {
+          if (rawData is Map && rawData.containsKey('data')) {
+            rawData = rawData['data'];
+          }
+          
+          if (rawData is List) {
+            _notes = rawData.map((e) => NoteModel.fromJson(e)).toList();
+          } else {
+            _notes = [];
+          }
         }
-      ],
-    },
-  ];
+      }
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_notes.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 6),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.note_outlined, size: 48, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'No notes available',
+              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _staticNotes.length,
+      itemCount: _notes.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final note = _staticNotes[index];
+        final note = _notes[index];
         return _NoteItem(note: note);
       },
     );
@@ -65,13 +110,18 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
 }
 
 class _NoteItem extends StatelessWidget {
-  final Map<String, dynamic> note;
+  final NoteModel note;
 
   const _NoteItem({required this.note});
 
   @override
   Widget build(BuildContext context) {
-    var attachments = note['attachments'] as List;
+    // Format date attempt
+    String formattedDate = note.createdAt;
+    try {
+      final date = DateTime.parse(note.createdAt);
+      formattedDate = DateFormat('MMM dd, yyyy h:mm a').format(date);
+    } catch (_) {}
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -91,14 +141,17 @@ class _NoteItem extends StatelessWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: const Color(0xFFE8F1FD),
-                child: Text(
-                  note['userInitials'],
-                  style: const TextStyle(
-                    color: Color(0xFF2A7DE1),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
+                backgroundImage: note.userImage.isNotEmpty ? NetworkImage(note.userImage) : null,
+                child: note.userImage.isEmpty
+                    ? Text(
+                        note.userName.isNotEmpty ? note.userName.substring(0, 1).toUpperCase() : 'U',
+                        style: const TextStyle(
+                          color: Color(0xFF2A7DE1),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -106,7 +159,7 @@ class _NoteItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      note['userName'],
+                      note.userName,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -115,7 +168,7 @@ class _NoteItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      note['date'],
+                      formattedDate,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[500],
@@ -140,12 +193,12 @@ class _NoteItem extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            note['note'],
+            note.note,
             style: const TextStyle(fontSize: 14, height: 1.4, color: Colors.black87),
           ),
-          if (attachments.isNotEmpty) ...[
+          if (note.attachments.isNotEmpty) ...[
             const SizedBox(height: 16),
-            ...attachments.map((file) => Container(
+            ...note.attachments.map((file) => Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -169,7 +222,7 @@ class _NoteItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          file['name'],
+                          file.fileName,
                           style: const TextStyle(
                             fontSize: 14, 
                             fontWeight: FontWeight.w500,
@@ -178,7 +231,7 @@ class _NoteItem extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          file['size'], 
+                          file.fileSize, 
                           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                         ),
                       ],

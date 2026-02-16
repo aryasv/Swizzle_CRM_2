@@ -16,6 +16,8 @@ const String baseURL =
 // dev
 "https://demoserver22.icwares.com/ayyoh/api/dev/";
 
+const String baseURLSWZ =
+"https://demoserver22.icwares.com/swizzleoauth/dev/api/";
 // staging
 
 // UAT
@@ -472,11 +474,17 @@ class WebFunctions {
     final token = await accessToken();
 
     final info = await getId();
+    var baseUrl = baseURL;
+    if (type == UrlType.swizzle) {
+      baseUrl = baseURLSWZ;
+    } else {
+      baseUrl = baseURL;
+    }
     if (await checkConnection()) {
       try {
-        var url = Uri.parse("$baseURL$functionName");
+        var url = Uri.parse("$baseUrl$functionName");
         var startTime = DateTime.now(); // Record the start time
-        var signUrl = "$baseURL$functionName";
+        var signUrl = "$baseUrl$functionName";
         var appSignature = AppSignatureApi.getAppSignatureString(
           signUrl,
           appId,
@@ -1831,6 +1839,53 @@ class WebFunctions {
     return await callApiFunction(
       context,
       "my-profile",
+      datadict,
+    );
+  }
+
+  Future<ApiResponse> getCompanyNotes({
+    required BuildContext context,
+    required String companyUuid,
+    required int companyId,
+    int page = 1,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "company_id": companyId,
+      "menu_type": "notes",
+      "page": page,
+    };
+
+    return await callApiFunction(
+      context,
+      "company/$companyUuid/view/notes",
+      datadict,
+    );
+  }
+
+  Future<ApiResponse> addCompanyNote({
+    required BuildContext context,
+    required String companyUuid,
+    required int companyId,
+    required String note,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "company_id": companyId,
+      "note": note,
+    };
+
+    final token = await accessToken();
+    if (token.isEmpty) {
+      return ApiResponse(
+        result: false,
+        error: "Authentication required. Please log in again.",
+      );
+    }
+
+    print("Add Note API - Adding note for company: $companyUuid");
+
+    return await callApiFunction(
+      context,
+      "company/$companyUuid/notes/store",
       datadict,
     );
   }
