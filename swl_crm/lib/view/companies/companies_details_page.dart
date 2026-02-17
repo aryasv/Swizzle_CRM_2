@@ -212,33 +212,14 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: company!.menus.map((menu) {
-            return _buildTabItem(menu.label, _getIconForMenuType(menu.menuType));
+            return _buildTabItem(menu.label);
           }).toList(),
         ),
       ),
     );
   }
 
-  IconData _getIconForMenuType(String menuType) {
-    switch (menuType) {
-      case 'basic_info':
-        return Icons.info_outline;
-      case 'notes':
-        return Icons.note_outlined;
-      case 'deals':
-        return Icons.monetization_on_outlined;
-      case 'tasks':
-        return Icons.check_circle_outline;
-      case 'clients':
-        return Icons.contacts_outlined;
-      case 'company':
-        return Icons.business_outlined;
-      default:
-        return Icons.circle_outlined;
-    }
-  }
-
-  Widget _buildTabItem(String label, IconData icon) {
+  Widget _buildTabItem(String label) {
     bool isSelected = _selectedTab == label;
     return GestureDetector(
       onTap: () {
@@ -247,7 +228,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: Colors.transparent,
@@ -255,23 +236,13 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
               ? const Border(bottom: BorderSide(color: Color(0xFF2A7DE1), width: 2))
               : null,
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? const Color(0xFF2A7DE1) : Colors.grey,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? const Color(0xFF2A7DE1) : Colors.grey,
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? const Color(0xFF2A7DE1) : Colors.grey,
+          ),
         ),
       ),
     );
