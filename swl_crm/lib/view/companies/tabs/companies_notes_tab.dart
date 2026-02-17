@@ -4,6 +4,11 @@ import 'package:swl_crm/view/models/note_model.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
 import 'package:intl/intl.dart';
 
+import 'package:gal/gal.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+
+
 class CompaniesNotesTab extends StatefulWidget {
   final CompanyDetailsModel? company;
   const CompaniesNotesTab({super.key, this.company});
@@ -289,12 +294,52 @@ class _NoteItem extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
+                    onTap: () async {
+                      try {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Downloading image...')),
+                        );
+
+                       
+                        bool hasAccess = await Gal.hasAccess();
+                        if (!hasAccess) {
+                          await Gal.requestAccess();
+                        }
+
+                        var response = await http.get(Uri.parse(file.fileUrl));
+                        
+                        if (response.statusCode == 200) {
+
+                          await Gal.putImageBytes(
+                            Uint8List.fromList(response.bodyBytes),
+                            name: file.fileName,
+                          );
+                          
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Image saved to gallery successfully')),
+                            );
+                          }
+                        } else {
+                           if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to download image')),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                         if (context.mounted) {
+                            // Gal specific error handling could be added here
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error downloading image: $e')),
+                            );
+                          }
+                      }
+                    },
                     child: const Icon(Icons.download, size: 20, color: Colors.grey),
                   ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    child: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                  ),
+
+
                 ],
               ),
             )),

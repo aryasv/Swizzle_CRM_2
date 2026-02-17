@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  http: ^1.2.1
+  http: ^1.6.0
   shared_preferences: ^2.2.3
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.0
@@ -43,6 +43,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   responsive_builder: ^0.7.0
   image_picker: ^1.2.1
+  url_launcher: ^6.3.2
+  permission_handler: ^12.0.1
+  path_provider: ^2.1.5
+  gal: ^2.3.2
 
 dev_dependencies:
   flutter_test:
