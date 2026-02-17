@@ -49,6 +49,9 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
       company = CompanyDetailsModel.fromJson(
         response.response!['data'],
       );
+      if (company!.menus.isNotEmpty) {
+        _selectedTab = company!.menus.first.label;
+      }
     }
 
     setState(() => isLoading = false);
@@ -197,6 +200,10 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
 
   // TAB BAR
   Widget _tabBar() {
+    if (company == null || company!.menus.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 0),
       decoration: _cardDecoration(),
@@ -204,17 +211,31 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
-          children: [
-            _buildTabItem('Basic Info', Icons.info_outline),
-            _buildTabItem('Notes', Icons.note_outlined),
-            _buildTabItem('Deals', Icons.monetization_on_outlined),
-            _buildTabItem('Tasks', Icons.check_circle_outline),
-            _buildTabItem('Contacts', Icons.contacts_outlined),
-            _buildTabItem('Company', Icons.business_outlined),
-          ],
+          children: company!.menus.map((menu) {
+            return _buildTabItem(menu.label, _getIconForMenuType(menu.menuType));
+          }).toList(),
         ),
       ),
     );
+  }
+
+  IconData _getIconForMenuType(String menuType) {
+    switch (menuType) {
+      case 'basic_info':
+        return Icons.info_outline;
+      case 'notes':
+        return Icons.note_outlined;
+      case 'deals':
+        return Icons.monetization_on_outlined;
+      case 'tasks':
+        return Icons.check_circle_outline;
+      case 'clients':
+        return Icons.contacts_outlined;
+      case 'company':
+        return Icons.business_outlined;
+      default:
+        return Icons.circle_outlined;
+    }
   }
 
   Widget _buildTabItem(String label, IconData icon) {

@@ -8,6 +8,7 @@ class CompanyDetailsModel {
   final String address;
   final String city;
   final String zip;
+  final List<MenuModel> menus;
 
   CompanyDetailsModel({
     required this.id,
@@ -19,6 +20,7 @@ class CompanyDetailsModel {
     required this.address,
     required this.city,
     required this.zip,
+    required this.menus,
   });
 
   factory CompanyDetailsModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,30 @@ class CompanyDetailsModel {
       address: company['address'] ?? '',
       city: company['city'] ?? '',
       zip: company['zip'] ?? '',
+      menus: (json['menus'] as List<dynamic>?)
+              ?.map((e) => MenuModel.fromJson(e))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class MenuModel {
+  final String label;
+  final String menuType;
+  final String icon;
+
+  MenuModel({
+    required this.label,
+    required this.menuType,
+    required this.icon,
+  });
+
+  factory MenuModel.fromJson(Map<String, dynamic> json) {
+    return MenuModel(
+      label: json['label'] ?? '',
+      menuType: json['menu_type'] ?? '',
+      icon: json['icon'] ?? '',
     );
   }
 }

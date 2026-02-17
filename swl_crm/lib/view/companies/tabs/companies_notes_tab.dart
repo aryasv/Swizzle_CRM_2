@@ -160,7 +160,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Note deleted successfully')),
         );
-        _loadNotes(); 
+        _loadNotes();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(response.error)),
