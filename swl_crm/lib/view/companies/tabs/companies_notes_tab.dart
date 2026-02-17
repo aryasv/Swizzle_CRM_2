@@ -58,6 +58,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
             rawData = rawData['data'];
           }
           
+          
           if (rawData is List) {
             _notes = rawData.map((e) => NoteModel.fromJson(e)).toList();
           } else {
@@ -108,16 +109,72 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final note = _notes[index];
-        return _NoteItem(note: note);
+        return _NoteItem(
+          note: note,
+          onDelete: () => _confirmDelete(note),
+        );
       },
     );
+  }
+
+  Future<void> _confirmDelete(NoteModel note) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Note'),
+        content: const Text('Are you sure you want to delete this note?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _deleteNote(note);
+    }
+  }
+
+  Future<void> _deleteNote(NoteModel note) async {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deleting note...')),
+    );
+
+    final response = await _api.deleteCompanyNote(
+      context: context,
+      companyUuid: widget.company?.uuid ?? '',
+      companyId: widget.company?.id ?? 0,
+      noteUuid: note.uuid,
+      noteId: note.id,
+    );
+
+    if (mounted) {
+      if (response.result) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note deleted successfully')),
+        );
+        _loadNotes(); 
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response.error)),
+        );
+      }
+    }
   }
 }
 
 class _NoteItem extends StatelessWidget {
   final NoteModel note;
+  final VoidCallback? onDelete;
 
-  const _NoteItem({required this.note});
+  const _NoteItem({required this.note, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +244,7 @@ class _NoteItem extends StatelessWidget {
                 children: [
 
                   GestureDetector(
+                    onTap: onDelete,
                     child: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                   ),
                 ],

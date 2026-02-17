@@ -1967,6 +1967,27 @@ class WebFunctions {
       );
     }
   }
+
+  Future<ApiResponse> deleteCompanyNote({
+    required BuildContext context,
+    required String companyUuid,
+    required int companyId,
+    required String noteUuid,
+    required int noteId,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "company_id": companyId,
+      "note_id": noteId,
+    };
+
+    // print("Delete Note API - Deleting note $noteUuid (ID: $noteId) for company $companyUuid (ID: $companyId)");
+
+    return await callApiFunction(
+      context,
+      "company/$companyUuid/view/note/$noteUuid/delete",
+      datadict,
+    );
+  }
 }
 
 enum UrlType { swizzle, sucessd }

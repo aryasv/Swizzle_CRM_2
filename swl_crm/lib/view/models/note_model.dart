@@ -23,7 +23,7 @@ class NoteModel {
 
   factory NoteModel.fromJson(Map<String, dynamic> json) {
     return NoteModel(
-      id: json['id'] ?? 0,
+      id: json['id'] ?? json['note_id'] ?? 0,
       uuid: json['note_uuid'] ?? '',
       note: json['note'] ?? '',
       createdBy: json['created_by'] ?? 0,
