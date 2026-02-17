@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
-import 'package:swl_crm/view/models/note_model.dart';
+import 'package:swl_crm/view/models/company_details_note_model.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
 import 'package:intl/intl.dart';
 
@@ -20,7 +20,7 @@ class CompaniesNotesTab extends StatefulWidget {
 class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
   final WebFunctions _api = WebFunctions();
   bool _isLoading = true;
-  List<NoteModel> _notes = [];
+  List<CompanyDetailsNoteModel> _notes = [];
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
         if (rawData is Map && rawData.containsKey('notes')) {
           final notesData = rawData['notes'];
           if (notesData is List) {
-            _notes = notesData.map((e) => NoteModel.fromJson(e)).toList();
+            _notes = notesData.map((e) => CompanyDetailsNoteModel.fromJson(e)).toList();
           }
         } 
 
@@ -60,7 +60,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
           
           
           if (rawData is List) {
-            _notes = rawData.map((e) => NoteModel.fromJson(e)).toList();
+            _notes = rawData.map((e) => CompanyDetailsNoteModel.fromJson(e)).toList();
           } else {
             _notes = [];
           }
@@ -117,7 +117,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
     );
   }
 
-  Future<void> _confirmDelete(NoteModel note) async {
+  Future<void> _confirmDelete(CompanyDetailsNoteModel note) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -141,7 +141,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
     }
   }
 
-  Future<void> _deleteNote(NoteModel note) async {
+  Future<void> _deleteNote(CompanyDetailsNoteModel note) async {
 
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Deleting note...')),
@@ -171,7 +171,7 @@ class _CompaniesNotesTabState extends State<CompaniesNotesTab> {
 }
 
 class _NoteItem extends StatelessWidget {
-  final NoteModel note;
+  final CompanyDetailsNoteModel note;
   final VoidCallback? onDelete;
 
   const _NoteItem({required this.note, this.onDelete});
@@ -245,7 +245,11 @@ class _NoteItem extends StatelessWidget {
 
                   GestureDetector(
                     onTap: onDelete,
-                    child: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      color: Colors.transparent,
+                      child: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                    ),
                   ),
                 ],
               )

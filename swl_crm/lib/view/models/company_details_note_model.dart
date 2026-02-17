@@ -1,4 +1,4 @@
-class NoteModel {
+class CompanyDetailsNoteModel {
   final int id;
   final String uuid;
   final String note;
@@ -9,7 +9,7 @@ class NoteModel {
   final String userImage;
   final List<AttachmentModel> attachments;
 
-  NoteModel({
+  CompanyDetailsNoteModel({
     required this.id,
     required this.uuid,
     required this.note,
@@ -21,8 +21,8 @@ class NoteModel {
     required this.attachments,
   });
 
-  factory NoteModel.fromJson(Map<String, dynamic> json) {
-    return NoteModel(
+  factory CompanyDetailsNoteModel.fromJson(Map<String, dynamic> json) {
+    return CompanyDetailsNoteModel(
       id: json['id'] ?? json['note_id'] ?? 0,
       uuid: json['note_uuid'] ?? '',
       note: json['note'] ?? '',
