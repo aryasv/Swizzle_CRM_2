@@ -1,35 +1,79 @@
 import 'package:flutter/material.dart';
 
 import 'package:swl_crm/view/models/companies_details_model.dart';
+import 'package:swl_crm/view/models/companies_details_deals_model.dart';
+import 'package:swl_crm/api/web_functions.dart';
 import 'package:intl/intl.dart';
 
 class CompaniesDealsTab extends StatefulWidget {
   final CompanyDetailsModel? company;
-  const CompaniesDealsTab({super.key, this.company});
+  final String menuType;
+
+  const CompaniesDealsTab({
+    super.key,
+    this.company,
+    required this.menuType,
+  });
 
   @override
   State<CompaniesDealsTab> createState() => _CompaniesDealsTabState();
 }
 
 class _CompaniesDealsTabState extends State<CompaniesDealsTab> {
+  final List<CompanyDetailsDealsModel> _deals = [];
+  bool _isLoading = true;
+  String? _error;
 
-  final List<Map<String, dynamic>> _deals = [
-    {
-      'title': 'Event',
-      'amount': 4000.00,
-      'user_name': 'Anish V J',
-      'date': '2026-02-17',
-    },
-    {
-      'title': 'Event',
-      'amount': 4000.00,
-      'user_name': 'Anish V J',
-      'date': '2026-02-17',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadDeals();
+  }
+
+  Future<void> _loadDeals() async {
+    if (widget.company == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final api = WebFunctions();
+    final response = await api.getCompanyDeals(
+      context: context,
+      companyUuid: widget.company!.uuid,
+      companyId: widget.company!.id,
+      menuType: widget.menuType,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+      if (response.result && response.response != null) {
+        final data = response.response!['data'];
+        if (data != null && data['deals'] != null && data['deals'] is List) {
+          _deals.clear();
+          _deals.addAll(
+            (data['deals'] as List).map((e) => CompanyDetailsDealsModel.fromJson(e)).toList(),
+          );
+        }
+      } else {
+        _error = response.error;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+
     if (_deals.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
@@ -70,16 +114,16 @@ class _CompaniesDealsTabState extends State<CompaniesDealsTab> {
 }
 
 class _DealItem extends StatelessWidget {
-  final Map<String, dynamic> deal;
+  final CompanyDetailsDealsModel deal;
 
   const _DealItem({required this.deal});
 
   @override
   Widget build(BuildContext context) {
     // Format date
-    String formattedDate = deal['date'];
+    String formattedDate = deal.date;
     try {
-      final date = DateTime.parse(deal['date']);
+      final date = DateTime.parse(deal.date);
       formattedDate = DateFormat('MM/dd/yyyy').format(date);
     } catch (_) {}
 
@@ -113,7 +157,7 @@ class _DealItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  deal['title'] ?? 'Deal',
+                  deal.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -122,7 +166,7 @@ class _DealItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '₹${(deal['amount'] as double).toStringAsFixed(2)}',
+                  '₹${deal.amount}',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -135,7 +179,7 @@ class _DealItem extends StatelessWidget {
                     const Icon(Icons.person_outline, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
-                      deal['user_name'] ?? '',
+                      deal.userName,
                       style: const TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(width: 16),

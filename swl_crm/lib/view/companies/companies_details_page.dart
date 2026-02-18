@@ -171,7 +171,10 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                   ] else if (_selectedTab == 'Notes') ...[
                      CompaniesNotesTab(key: _notesTabKey, company: company),
                   ] else if (_selectedTab == 'Deals') ...[
-                     CompaniesDealsTab(company: company),
+                     CompaniesDealsTab(
+                         company: company,
+                         menuType: company!.menus.firstWhere((m) => m.label == 'Deals', orElse: () => MenuModel(label: 'Deals', menuType: 'deals', icon: '')).menuType
+                     ),
                   ] else ...[
                      Container(
                       padding: const EdgeInsets.all(32),
