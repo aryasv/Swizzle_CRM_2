@@ -7,6 +7,7 @@ import 'package:swl_crm/view/models/companies_model.dart';
 import 'package:swl_crm/view/companies/tabs/companies_notes_tab.dart';
 import 'package:swl_crm/view/companies/tabs/companies_deals_tab.dart';
 import 'package:swl_crm/view/companies/tabs/companies_tasks_tab.dart';
+import 'package:swl_crm/view/companies/tabs/companies_contacts_tab.dart';
 
 class CompaniesDetailsPage extends StatefulWidget {
   final int companyId;
@@ -182,6 +183,8 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                      ),
                   ] else if (_selectedTab == 'Tasks') ...[
                      CompaniesTasksTab(company: company),
+                  ] else if (_selectedTab == 'Contacts') ...[
+                     CompaniesContactsTab(company: company),
                   ] else ...[
                      Container(
                       padding: const EdgeInsets.all(32),
