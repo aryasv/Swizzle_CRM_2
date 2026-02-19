@@ -62,7 +62,7 @@ class _CompaniesTasksTabState extends State<CompaniesTasksTab> {
           else if (data['data'] != null && data['data'] is List) { 
              tasksData = data['data'];
           } 
-          
+
           else if (data is List) {
              tasksData = data;
           }
