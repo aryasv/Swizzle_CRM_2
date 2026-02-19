@@ -1883,6 +1883,25 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> getCompanyTasks({
+    required BuildContext context,
+    required String companyUuid,
+    required int companyId,
+    int page = 1,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "company_id": companyId,
+      "menu_type": "tasks",
+      "page": page,
+    };
+
+    return await callApiFunction(
+      context,
+      "company/$companyUuid/view/tasks",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> addCompanyNote({
     required BuildContext context,
     required String companyUuid,

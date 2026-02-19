@@ -52,7 +52,7 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
         response.response!['data'],
       );
       if (company!.menus.isNotEmpty) {
-        
+
         if (!company!.menus.any((m) => m.label == 'Tasks')) {
             company!.menus.add(MenuModel(label: 'Tasks', menuType: 'tasks', icon: ''));
         }

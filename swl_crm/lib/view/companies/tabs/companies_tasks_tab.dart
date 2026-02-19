@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
+import 'package:swl_crm/view/models/companies_details_tasks_model.dart';
+import 'package:intl/intl.dart';
 
 class CompaniesTasksTab extends StatefulWidget {
   final CompanyDetailsModel? company;
@@ -10,25 +13,84 @@ class CompaniesTasksTab extends StatefulWidget {
 }
 
 class _CompaniesTasksTabState extends State<CompaniesTasksTab> {
+  final List<CompanyDetailsTasksModel> _tasks = [];
+  bool _isLoading = true;
+  String? _error;
 
-  final List<Map<String, dynamic>> _dummyTasks = [
-    {
-      'title': 'Test',
-      'assigned_to': 'Test Assigned',
-      'due_date': '02/17/2026',
-      'status': 'pending',
-    },
-    {
-      'title': 'Test',
-      'assigned_to': 'Test Assigned',
-      'due_date': '02/17/2026',
-      'status': 'pending',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    if (widget.company == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final api = WebFunctions();
+    final response = await api.getCompanyTasks(
+      context: context,
+      companyUuid: widget.company!.uuid,
+      companyId: widget.company!.id,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+      if (response.result && response.response != null) {
+        final data = response.response!['data'];
+        
+        List<dynamic>? tasksData;
+        if (data != null) {
+
+          if (data['task'] != null && data['task'] is List) {
+            tasksData = data['task'];
+          } 
+
+          else if (data['tasks'] != null && data['tasks'] is List) {
+            tasksData = data['tasks'];
+          } 
+
+          else if (data['data'] != null && data['data'] is List) { 
+             tasksData = data['data'];
+          } 
+          
+          else if (data is List) {
+             tasksData = data;
+          }
+        }
+
+        if (tasksData != null) {
+          _tasks.clear();
+          _tasks.addAll(
+            tasksData.map((e) => CompanyDetailsTasksModel.fromJson(e)).toList(),
+          );
+        }
+      } else {
+        _error = response.error;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_dummyTasks.isEmpty) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+
+    if (_tasks.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
         alignment: Alignment.center,
@@ -42,7 +104,7 @@ class _CompaniesTasksTabState extends State<CompaniesTasksTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 48, color: Colors.grey[300]),
+            Icon(Icons.assignment_turned_in_outlined, size: 48, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
               'No tasks available',
@@ -57,10 +119,10 @@ class _CompaniesTasksTabState extends State<CompaniesTasksTab> {
       padding: const EdgeInsets.only(bottom: 80),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _dummyTasks.length,
+      itemCount: _tasks.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final task = _dummyTasks[index];
+        final task = _tasks[index];
         return _TaskItem(task: task);
       },
     );
@@ -68,12 +130,20 @@ class _CompaniesTasksTabState extends State<CompaniesTasksTab> {
 }
 
 class _TaskItem extends StatelessWidget {
-  final Map<String, dynamic> task;
+  final CompanyDetailsTasksModel task;
 
   const _TaskItem({required this.task});
 
   @override
   Widget build(BuildContext context) {
+    String formattedDate = task.dueDate;
+    try {
+        if (task.dueDate.isNotEmpty) {
+           final date = DateTime.parse(task.dueDate);
+           formattedDate = DateFormat('MM/dd/yyyy').format(date);
+        }
+    } catch (_) {}
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -86,7 +156,6 @@ class _TaskItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon Box
           Container(
             width: 48,
             height: 48,
@@ -102,13 +171,12 @@ class _TaskItem extends StatelessWidget {
           ),
           const SizedBox(width: 16),
 
-          // Task Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  task['title'],
+                  task.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -121,7 +189,7 @@ class _TaskItem extends StatelessWidget {
                     const Icon(Icons.person_outline, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
-                      task['assigned_to'],
+                      task.assignedTo.isNotEmpty ? task.assignedTo : 'Unassigned',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.grey,
@@ -131,12 +199,13 @@ class _TaskItem extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
+                if (formattedDate.isNotEmpty)
                 Row(
                   children: [
                     const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
-                      'Due: ${task['due_date']}',
+                      'Due: $formattedDate',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.grey,
