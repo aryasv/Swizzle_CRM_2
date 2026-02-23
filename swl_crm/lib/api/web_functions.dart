@@ -1902,6 +1902,26 @@ class WebFunctions {
     );
   }
 
+  Future<ApiResponse> getCompanyContacts({
+    required BuildContext context,
+    required String companyUuid,
+    required int companyId,
+    required String menuType,
+    int page = 1,
+  }) async {
+    final Map<String, dynamic> datadict = {
+      "company_id": companyId,
+      "menu_type": menuType,
+      "page": page,
+    };
+
+    return await callApiFunction(
+      context,
+      "company/$companyUuid/view/$menuType",
+      datadict,
+    );
+  }
+
   Future<ApiResponse> addCompanyNote({
     required BuildContext context,
     required String companyUuid,

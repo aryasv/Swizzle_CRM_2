@@ -184,7 +184,10 @@ class _CompaniesDetailsPageState extends State<CompaniesDetailsPage> {
                   ] else if (_selectedTab == 'Tasks') ...[
                      CompaniesTasksTab(company: company),
                   ] else if (_selectedTab == 'Contacts') ...[
-                     CompaniesContactsTab(company: company),
+                     CompaniesContactsTab(
+                         company: company,
+                         menuType: company!.menus.firstWhere((m) => m.label == 'Contacts', orElse: () => MenuModel(label: 'Contacts', menuType: 'contacts', icon: '')).menuType
+                     ),
                   ] else ...[
                      Container(
                       padding: const EdgeInsets.all(32),

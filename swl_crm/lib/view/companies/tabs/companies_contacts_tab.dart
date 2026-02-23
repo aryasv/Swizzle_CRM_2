@@ -2,60 +2,140 @@ import 'package:flutter/material.dart';
 import 'package:swl_crm/view/custom_classes/imports.dart';
 import 'package:swl_crm/view/models/companies_details_model.dart';
 
-class CompaniesContactsTab extends StatelessWidget {
-  final CompanyDetailsModel? company;
+import 'package:swl_crm/view/models/companies_details_contacts_model.dart';
 
-  const CompaniesContactsTab({super.key, this.company});
+class CompaniesContactsTab extends StatefulWidget {
+  final CompanyDetailsModel? company;
+  final String menuType;
+
+  const CompaniesContactsTab({
+    super.key,
+    this.company,
+    required this.menuType,
+  });
+
+  @override
+  State<CompaniesContactsTab> createState() => _CompaniesContactsTabState();
+}
+
+class _CompaniesContactsTabState extends State<CompaniesContactsTab> {
+  final List<CompanyDetailsContactsModel> _contacts = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    if (widget.company == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final api = WebFunctions();
+    final response = await api.getCompanyContacts(
+      context: context,
+      companyUuid: widget.company!.uuid,
+      companyId: widget.company!.id,
+      menuType: widget.menuType,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+      if (response.result && response.response != null) {
+        final data = response.response!['data'];
+        
+        List<dynamic>? contactsData;
+        if (data != null) {
+          if (data['contacts'] != null && data['contacts'] is List) {
+             contactsData = data['contacts'];
+          } else if (data['clients'] != null && data['clients'] is List) {
+             contactsData = data['clients'];
+          } else if (data['contact'] != null && data['contact'] is List) {
+             contactsData = data['contact'];
+          } else if (data['data'] != null && data['data'] is List) {
+             contactsData = data['data'];
+          } else if (data is List) {
+             contactsData = data;
+          }
+        }
+
+        if (contactsData != null) {
+          _contacts.clear();
+          _contacts.addAll(
+            contactsData.map((e) => CompanyDetailsContactsModel.fromJson(e)).toList(),
+          );
+        }
+      } else {
+        _error = response.error;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-    final List<Map<String, String>> staticContacts = [
-      {
-        'name': 'Test name',
-        'phone': '06738238888',
-        'email': 'test@icwares.com',
-      },
-      {
-        'name': 'Test name',
-        'phone': '06738238888',
-        'email': 'test@icwares.com',
-      },
-      {
-        'name': 'Test name',
-        'phone': '06738238888',
-        'email': 'test@icwares.com',
-      },
-    ];
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+
+    if (_contacts.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 6),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_outline, size: 48, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'No contacts available',
+              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
 
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: staticContacts.length,
+      itemCount: _contacts.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final contact = staticContacts[index];
-        return _ContactItem(
-          name: contact['name']!,
-          phone: contact['phone']!,
-          email: contact['email']!,
-        );
+        final contact = _contacts[index];
+        return _ContactItem(contact: contact);
       },
     );
   }
 }
 
 class _ContactItem extends StatelessWidget {
-  final String name;
-  final String phone;
-  final String email;
+  final CompanyDetailsContactsModel contact;
 
-  const _ContactItem({
-    required this.name,
-    required this.phone,
-    required this.email,
-  });
+  const _ContactItem({required this.contact});
 
   @override
   Widget build(BuildContext context) {
@@ -90,29 +170,32 @@ class _ContactItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  contact.name,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600, 
+                    fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  phone,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey,
+                if (contact.phone.isNotEmpty)
+                  Text(
+                    contact.phone,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  email,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey,
+                if (contact.email.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    contact.email,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
